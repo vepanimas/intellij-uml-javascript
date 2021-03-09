@@ -1,0 +1,16 @@
+<idea-plugin>
+    <id>org.vepanimas.uml.javascript</id>
+    <name>UML JavaScript and TypeScript</name>
+    <vendor>Vladimir Panimaskin</vendor>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.ultimate</depends>
+    <depends>JavaScript</depends>
+    <depends>com.intellij.diagram</depends>
+
+    <resource-bundle>messages.DiagramBundle</resource-bundle>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <diagram.Provider implementation="org.vepanimas.uml.javascript.JavaScriptUmlProvider"/>
+    </extensions>
+</idea-plugin>

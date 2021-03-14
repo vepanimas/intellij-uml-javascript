@@ -1,6 +1,7 @@
 package org.vepanimas.uml.javascript;
 
 import com.intellij.diagram.*;
+import com.intellij.lang.javascript.psi.JSFile;
 import com.intellij.lang.javascript.psi.ecmal4.JSClass;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.ModificationTracker;
@@ -8,13 +9,14 @@ import com.intellij.openapi.util.SimpleModificationTracker;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.SmartPointerManager;
+import com.intellij.psi.SmartPsiElementPointer;
+import com.intellij.psi.util.PsiTreeUtil;
+import com.intellij.util.containers.ContainerUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
     private final VirtualFile myEditorFile;
@@ -22,6 +24,7 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
     private final SmartPointerManager mySmartPointerManager;
     private final ModificationTracker myModificationTracker = new SimpleModificationTracker();
 
+    private final @Nullable SmartPsiElementPointer<PsiElement> myInitialElement;
     private final @NotNull Set<DiagramNode<PsiElement>> myNodes = new HashSet<>();
     private final @NotNull Set<DiagramEdge<PsiElement>> myEdges = new HashSet<>();
     private final @NotNull Set<DiagramEdge<PsiElement>> myDependencyEdges = new HashSet<>();
@@ -37,6 +40,7 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
         myEditorFile = file;
         myPresentationModel = presentationModel;
         mySmartPointerManager = SmartPointerManager.getInstance(getProject());
+        myInitialElement = psiElement != null ? mySmartPointerManager.createSmartPsiElementPointer(psiElement) : null;
 
         if (psiElement != null) {
             addElement(psiElement);
@@ -63,14 +67,50 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
     }
 
     @Override
-    public @Nullable DiagramNode<PsiElement> addElement(@NotNull PsiElement element) {
+    public @Nullable DiagramNode<PsiElement> addElement(PsiElement element) {
         if (element instanceof JSClass) {
-            return addClass(((JSClass) element));
+            return addClass((JSClass) element, true);
+        }
+        if (element instanceof JSFile) {
+            return addFile((JSFile) element);
         }
         return null;
     }
 
-    public @Nullable DiagramNode<PsiElement> addClass(@NotNull JSClass element) {
+    private @Nullable DiagramNode<PsiElement> addFile(@NotNull JSFile file) {
+        List<DiagramNode<PsiElement>> classes = PsiTreeUtil.findChildrenOfType(file, JSClass.class)
+                .stream().map(jsClass -> this.addClass(jsClass, false)).collect(Collectors.toList());
+        return ContainerUtil.getFirstItem(classes);
+    }
+
+    private @NotNull DiagramNode<PsiElement> addClass(@NotNull JSClass element, boolean addParents) {
+        JavaScriptUmlNode node = addNode(element);
+        if (addParents) {
+            addParents(element);
+        }
+        return node;
+    }
+
+    private void addParents(@NotNull JSClass element) {
+        Queue<JSClass> queue = new ArrayDeque<>();
+        Set<JSClass> visited = new HashSet<>();
+
+        queue.add(element);
+        while (!queue.isEmpty()) {
+            JSClass jsClass = queue.poll();
+            visited.add(jsClass);
+            this.addNode(jsClass);
+
+            JSClass[] supers = jsClass.getSupers();
+            for (JSClass superClass : supers) {
+                if (!visited.contains(superClass)) {
+                    queue.add(superClass);
+                }
+            }
+        }
+    }
+
+    private @NotNull JavaScriptUmlNode addNode(@NotNull PsiElement element) {
         JavaScriptUmlNode node = createNode(element);
         myNodes.add(node);
         return node;
@@ -88,7 +128,6 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
 
     @Override
     public void dispose() {
-
     }
 
     private @NotNull JavaScriptUmlNode createNode(@NotNull PsiElement element) {

@@ -5,6 +5,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiElement;
 import org.intellij.lang.annotations.Pattern;
+import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -64,5 +65,10 @@ public class JavaScriptUmlProvider extends DiagramProvider<PsiElement> {
     @Override
     public @NotNull DiagramNodeContentManager createNodeContentManager() {
         return DiagramNodeContentManager.NO_CATEGORIES;
+    }
+
+    @Override
+    public @NotNull @Nls String getActionName(boolean isPopup) {
+        return super.getActionName(isPopup);
     }
 }

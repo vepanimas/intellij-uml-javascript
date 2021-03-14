@@ -1,6 +1,7 @@
 package org.vepanimas.uml.javascript;
 
 import com.intellij.diagram.DiagramVfsResolver;
+import com.intellij.lang.javascript.psi.JSFile;
 import com.intellij.lang.javascript.psi.ecmal4.JSClass;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.text.StringUtil;
@@ -17,11 +18,16 @@ public class JavaScriptUmlVfsResolver implements DiagramVfsResolver<PsiElement> 
 
     @Override
     public @Nullable String getQualifiedName(PsiElement element) {
+        VirtualFile virtualFile = element.getContainingFile().getVirtualFile();
+        if (virtualFile == null) return null;
+
         if (element instanceof JSClass) {
-            VirtualFile file = element.getContainingFile().getVirtualFile();
             String name = ((JSClass) element).getName();
-            if (file == null || name == null) return null;
-            return String.join("#", file.getPath(), name, Integer.toString(element.getTextOffset()));
+            if (name == null) return null;
+            return String.join("#", virtualFile.getPath(), name, Integer.toString(element.getTextOffset()));
+        }
+        if (element instanceof JSFile) {
+            return virtualFile.getPath();
         }
         return null;
     }
@@ -29,10 +35,20 @@ public class JavaScriptUmlVfsResolver implements DiagramVfsResolver<PsiElement> 
     @Override
     public @Nullable PsiElement resolveElementByFQN(@NotNull String s, @NotNull Project project) {
         String[] parts = s.split("#");
-        if (parts.length != 3) return null;
-        String path = parts[0];
-        String expectedName = parts[1];
-        String offsetStr = parts[2];
+        if (parts.length == 3) {
+            return resolveClass(project, parts[0], parts[1], parts[2]);
+        }
+        return resolveAsFile(s, project);
+    }
+
+    private @Nullable PsiElement resolveAsFile(@NotNull String path, @NotNull Project project) {
+        VirtualFile file = LocalFileSystem.getInstance().findFileByPath(path);
+        if (file == null) return null;
+        return PsiManager.getInstance(project).findFile(file);
+    }
+
+
+    private @Nullable PsiElement resolveClass(@NotNull Project project, String path, String expectedName, String offsetStr) {
         int offset = StringUtil.parseInt(offsetStr, -1);
         if (offset == -1) return null;
         VirtualFile file = LocalFileSystem.getInstance().findFileByPath(path);

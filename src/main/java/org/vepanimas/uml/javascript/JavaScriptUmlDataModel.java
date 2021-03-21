@@ -2,6 +2,7 @@ package org.vepanimas.uml.javascript;
 
 import com.intellij.diagram.*;
 import com.intellij.lang.javascript.psi.JSFile;
+import com.intellij.lang.javascript.psi.ecma6.TypeScriptEnum;
 import com.intellij.lang.javascript.psi.ecmal4.JSClass;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.ModificationTracker;
@@ -11,6 +12,7 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.SmartPointerManager;
 import com.intellij.psi.SmartPsiElementPointer;
 import com.intellij.psi.util.PsiTreeUtil;
+import com.intellij.util.Processor;
 import com.intellij.util.containers.ContainerUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -25,6 +27,7 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
     private final ModificationTracker myModificationTracker = new SimpleModificationTracker();
 
     private final @Nullable SmartPsiElementPointer<PsiElement> myInitialElement;
+
     private final @NotNull Set<DiagramNode<PsiElement>> myNodes = new HashSet<>();
     private final @NotNull Set<DiagramEdge<PsiElement>> myEdges = new HashSet<>();
     private final @NotNull Set<DiagramEdge<PsiElement>> myDependencyEdges = new HashSet<>();
@@ -43,7 +46,7 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
         myInitialElement = psiElement != null ? mySmartPointerManager.createSmartPsiElementPointer(psiElement) : null;
 
         if (psiElement != null) {
-            addElement(psiElement);
+            addElement(psiElement, true);
         }
     }
 
@@ -68,8 +71,12 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
 
     @Override
     public @Nullable DiagramNode<PsiElement> addElement(PsiElement element) {
+        return addElement(element, false);
+    }
+
+    private @Nullable DiagramNode<PsiElement> addElement(PsiElement element, boolean isInitialization) {
         if (element instanceof JSClass) {
-            return addClass((JSClass) element, true);
+            return addClass((JSClass) element, isInitialization);
         }
         if (element instanceof JSFile) {
             return addFile((JSFile) element);
@@ -79,7 +86,7 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
 
     private @Nullable DiagramNode<PsiElement> addFile(@NotNull JSFile file) {
         List<DiagramNode<PsiElement>> classes = PsiTreeUtil.findChildrenOfType(file, JSClass.class)
-                .stream().map(jsClass -> this.addClass(jsClass, false)).collect(Collectors.toList());
+                .stream().map(jsClass -> addClass(jsClass, false)).collect(Collectors.toList());
         return ContainerUtil.getFirstItem(classes);
     }
 
@@ -92,22 +99,35 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
     }
 
     private void addParents(@NotNull JSClass element) {
+        processClassParents(element, el -> {
+            this.addNode(el);
+            return true;
+        });
+    }
+
+    private void processClassParents(@NotNull JSClass element, @NotNull Processor<PsiElement> processor) {
         Queue<JSClass> queue = new ArrayDeque<>();
         Set<JSClass> visited = new HashSet<>();
 
         queue.add(element);
         while (!queue.isEmpty()) {
             JSClass jsClass = queue.poll();
-            visited.add(jsClass);
-            this.addNode(jsClass);
-
-            JSClass[] supers = jsClass.getSupers();
-            for (JSClass superClass : supers) {
-                if (!visited.contains(superClass)) {
-                    queue.add(superClass);
-                }
+            if (visited.add(jsClass)) {
+                if (!processor.process(jsClass)) return;
+            } else {
+                continue;
             }
+
+            if (ignoreParentsFor(jsClass)) {
+                continue;
+            }
+
+            Collections.addAll(queue, jsClass.getSupers());
         }
+    }
+
+    private static boolean ignoreParentsFor(@NotNull JSClass jsClass) {
+        return jsClass instanceof TypeScriptEnum;
     }
 
     private @NotNull JavaScriptUmlNode addNode(@NotNull PsiElement element) {

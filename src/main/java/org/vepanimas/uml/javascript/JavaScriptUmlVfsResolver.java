@@ -22,7 +22,7 @@ public class JavaScriptUmlVfsResolver implements DiagramVfsResolver<PsiElement> 
         if (virtualFile == null) return null;
 
         if (element instanceof JSClass) {
-            String name = ((JSClass) element).getName();
+            String name = ((JSClass) element).getQualifiedName();
             if (name == null) return null;
             return String.join("#", virtualFile.getPath(), name, Integer.toString(element.getTextOffset()));
         }
@@ -48,7 +48,7 @@ public class JavaScriptUmlVfsResolver implements DiagramVfsResolver<PsiElement> 
     }
 
 
-    private @Nullable PsiElement resolveClass(@NotNull Project project, String path, String expectedName, String offsetStr) {
+    private @Nullable PsiElement resolveClass(@NotNull Project project, String path, String expectedQualifiedName, String offsetStr) {
         int offset = StringUtil.parseInt(offsetStr, -1);
         if (offset == -1) return null;
         VirtualFile file = LocalFileSystem.getInstance().findFileByPath(path);
@@ -58,6 +58,6 @@ public class JavaScriptUmlVfsResolver implements DiagramVfsResolver<PsiElement> 
         PsiElement element = psiFile.findElementAt(offset);
         JSClass classElement = PsiTreeUtil.getNonStrictParentOfType(element, JSClass.class);
         if (classElement == null) return null;
-        return StringUtil.equals(classElement.getName(), expectedName) ? classElement : null;
+        return StringUtil.equals(classElement.getQualifiedName(), expectedQualifiedName) ? classElement : null;
     }
 }

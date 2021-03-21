@@ -64,7 +64,7 @@ public class JavaScriptUmlProvider extends DiagramProvider<PsiElement> {
 
     @Override
     public @NotNull DiagramNodeContentManager createNodeContentManager() {
-        return DiagramNodeContentManager.NO_CATEGORIES;
+        return new JavaScriptUmlNodeContentManager();
     }
 
     @Override

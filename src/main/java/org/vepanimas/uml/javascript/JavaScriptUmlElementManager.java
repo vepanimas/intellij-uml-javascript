@@ -6,6 +6,7 @@ import com.intellij.lang.javascript.psi.JSFile;
 import com.intellij.lang.javascript.psi.ecmal4.JSClass;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.actionSystem.DataContext;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import org.jetbrains.annotations.Nls;
@@ -29,14 +30,25 @@ public class JavaScriptUmlElementManager extends AbstractDiagramElementManager<P
     }
 
     @Override
+    public boolean canBeBuiltFrom(@Nullable Object element) {
+        return isAcceptableAsNode(element) || element instanceof JSFile;
+    }
+
+    @Override
     public boolean isAcceptableAsNode(@Nullable Object o) {
-        return o instanceof JSClass || o instanceof JSFile;
+        return o instanceof JSClass;
     }
 
     @Override
     public @Nullable @Nls String getElementTitle(PsiElement element) {
         if (element instanceof JSClass) {
-            return ((JSClass) element).getName();
+            return ((JSClass) element).getQualifiedName();
+        }
+        if (element instanceof JSFile) {
+            VirtualFile virtualFile = ((JSFile) element).getVirtualFile();
+            if (virtualFile != null) {
+                return virtualFile.getPresentableName();
+            }
         }
         return null;
     }

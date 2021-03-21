@@ -4,8 +4,6 @@ import com.intellij.diagram.AbstractDiagramNodeContentManager;
 import com.intellij.diagram.DiagramCategory;
 import com.intellij.icons.AllIcons;
 import com.intellij.lang.javascript.psi.JSField;
-import com.intellij.lang.javascript.psi.JSFunction;
-import com.intellij.lang.javascript.psi.JSProperty;
 import com.intellij.uml.UmlIcons;
 import com.intellij.uml.utils.DiagramBundle;
 import org.jetbrains.annotations.NotNull;
@@ -30,14 +28,14 @@ public class JavaScriptUmlNodeContentManager extends AbstractDiagramNodeContentM
 
     @Override
     public boolean isInCategory(final @Nullable Object element, final @NotNull DiagramCategory category) {
-        if (FIELDS.equals(category)) {
-            return element instanceof JSField;
+        if (PROPERTIES.equals(category)) {
+            return JavaScriptUmlUtils.isGetterOrSetter(element) || JavaScriptUmlUtils.isInterfaceProperty(element);
         } else if (CONSTRUCTORS.equals(category)) {
-            return element instanceof JSFunction && ((JSFunction) element).isConstructor();
+            return JavaScriptUmlUtils.isConstructor(element);
         } else if (METHODS.equals(category)) {
-            return element instanceof JSFunction && !((JSFunction) element).isConstructor();
-        } else if (PROPERTIES.equals(category)) {
-            return element instanceof JSProperty;
+            return JavaScriptUmlUtils.isMethod(element);
+        } else if (FIELDS.equals(category)) {
+            return element instanceof JSField && !JavaScriptUmlUtils.isInterfaceProperty(element);
         }
         return false;
     }

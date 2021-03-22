@@ -14,9 +14,11 @@ public class JavaScriptUmlProvider extends DiagramProvider<PsiElement> {
 
     private final JavaScriptUmlElementManager myElementManager;
     private final JavaScriptUmlVfsResolver myVfsResolver;
+    private final JavaScriptUmlVisibilityManager myVisibilityManager;
 
     public JavaScriptUmlProvider() {
         myElementManager = new JavaScriptUmlElementManager();
+        myVisibilityManager = new JavaScriptUmlVisibilityManager();
         myVfsResolver = new JavaScriptUmlVfsResolver();
 
         myElementManager.setUmlProvider(this);
@@ -53,7 +55,7 @@ public class JavaScriptUmlProvider extends DiagramProvider<PsiElement> {
 
     @Override
     public @NotNull DiagramVisibilityManager createVisibilityManager() {
-        return EmptyDiagramVisibilityManager.INSTANCE;
+        return myVisibilityManager;
     }
 
     @Override

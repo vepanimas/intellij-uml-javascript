@@ -18,6 +18,8 @@ public class JavaScriptUmlVfsResolver implements DiagramVfsResolver<PsiElement> 
 
     @Override
     public @Nullable String getQualifiedName(PsiElement element) {
+        if (element == null) return null;
+
         VirtualFile virtualFile = element.getContainingFile().getVirtualFile();
         if (virtualFile == null) return null;
 

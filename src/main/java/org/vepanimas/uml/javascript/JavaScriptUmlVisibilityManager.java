@@ -51,4 +51,9 @@ public class JavaScriptUmlVisibilityManager extends AbstractUmlVisibilityManager
     public @NotNull Comparator<VisibilityLevel> getComparator() {
         return COMPARATOR;
     }
+
+    @Override
+    public boolean isRelayoutNeeded() {
+        return true;
+    }
 }

@@ -4,7 +4,6 @@ import com.intellij.diagram.AbstractDiagramElementManager;
 import com.intellij.diagram.DiagramBuilder;
 import com.intellij.diagram.presentation.DiagramState;
 import com.intellij.icons.AllIcons;
-import com.intellij.lang.javascript.DialectDetector;
 import com.intellij.lang.javascript.presentable.JSFormatUtil;
 import com.intellij.lang.javascript.psi.*;
 import com.intellij.lang.javascript.psi.ecmal4.JSClass;
@@ -37,27 +36,27 @@ import static com.intellij.psi.util.PsiFormatUtilBase.*;
 public class JavaScriptUmlElementManager extends AbstractDiagramElementManager<PsiElement> {
     @Override
     public @Nullable PsiElement findInDataContext(@NotNull DataContext dataContext) {
-        PsiFile psiFile = dataContext.getData(CommonDataKeys.PSI_FILE);
-        if (!(psiFile instanceof JSFile)) return null;
-        if (!DialectDetector.isTypeScript(psiFile) && !DialectDetector.isJavaScript(psiFile)) {
-            return null;
-        }
         PsiElement element = dataContext.getData(CommonDataKeys.PSI_ELEMENT);
-        if (element instanceof JSClass) {
+        if (JavaScriptUmlUtils.isAcceptableAsSource(element)) {
             return element;
-        } else {
+        }
+
+        PsiFile psiFile = dataContext.getData(CommonDataKeys.PSI_FILE);
+        if (JavaScriptUmlUtils.isAcceptableAsSource(psiFile)) {
             return psiFile;
         }
+
+        return null;
     }
 
     @Override
     public boolean canBeBuiltFrom(@Nullable Object element) {
-        return isAcceptableAsNode(element) || element instanceof JSFile;
+        return JavaScriptUmlUtils.isAcceptableAsSource(element);
     }
 
     @Override
     public boolean isAcceptableAsNode(@Nullable Object o) {
-        return o instanceof JSClass;
+        return JavaScriptUmlUtils.isAcceptableAsNode(o);
     }
 
     @Override

@@ -1,5 +1,6 @@
 package org.vepanimas.uml.javascript;
 
+import com.intellij.lang.javascript.DialectDetector;
 import com.intellij.lang.javascript.psi.*;
 import com.intellij.lang.javascript.psi.ecma6.TypeScriptEnum;
 import com.intellij.lang.javascript.psi.ecma6.TypeScriptInterface;
@@ -8,6 +9,7 @@ import com.intellij.lang.javascript.psi.resolve.JSResolveUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiElement;
 import com.intellij.util.ObjectUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class JavaScriptUmlUtils {
@@ -87,5 +89,26 @@ public final class JavaScriptUmlUtils {
 
     public static boolean isEnumField(@Nullable Object element) {
         return element instanceof JSField && JSResolveUtil.findParent(((JSField) element)) instanceof TypeScriptEnum;
+    }
+
+    public static boolean isAcceptableAsSource(@Nullable Object object) {
+        if (!(object instanceof PsiElement)) return false;
+        if (object instanceof JSFile) {
+            return isSupportedLanguageDialect(((JSFile) object));
+        }
+
+        return isAcceptableAsNode(object);
+    }
+
+    public static boolean isAcceptableAsNode(@Nullable Object o) {
+        if (o instanceof JSClass) {
+            return isSupportedLanguageDialect(((JSClass) o));
+        }
+
+        return false;
+    }
+
+    private static boolean isSupportedLanguageDialect(@NotNull PsiElement element) {
+        return DialectDetector.isJavaScript(element) || DialectDetector.isTypeScript(element);
     }
 }

@@ -1,6 +1,7 @@
 package org.vepanimas.uml.javascript;
 
 import com.intellij.diagram.*;
+import com.intellij.diagram.extras.DiagramExtras;
 import com.intellij.lang.javascript.DialectDetector;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -18,11 +19,13 @@ public class JavaScriptUmlProvider extends DiagramProvider<PsiElement> {
     private final JavaScriptUmlElementManager myElementManager;
     private final JavaScriptUmlVfsResolver myVfsResolver;
     private final JavaScriptUmlVisibilityManager myVisibilityManager;
+    private final JavaScriptUmlExtras myExtras;
 
     public JavaScriptUmlProvider() {
         myElementManager = new JavaScriptUmlElementManager();
         myVisibilityManager = new JavaScriptUmlVisibilityManager();
         myVfsResolver = new JavaScriptUmlVfsResolver();
+        myExtras = new JavaScriptUmlExtras();
 
         myElementManager.setUmlProvider(this);
     }
@@ -87,5 +90,10 @@ public class JavaScriptUmlProvider extends DiagramProvider<PsiElement> {
     @Override
     public @NotNull @Nls String getActionName(boolean isPopup) {
         return super.getActionName(isPopup);
+    }
+
+    @Override
+    public @NotNull DiagramExtras<PsiElement> getExtras() {
+        return myExtras;
     }
 }

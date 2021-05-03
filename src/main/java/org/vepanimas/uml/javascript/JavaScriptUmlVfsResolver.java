@@ -16,6 +16,8 @@ import org.jetbrains.annotations.Nullable;
 
 public class JavaScriptUmlVfsResolver implements DiagramVfsResolver<PsiElement> {
 
+    public static final String SEPARATOR = ":";
+
     @Override
     public @Nullable String getQualifiedName(PsiElement element) {
         if (element == null) return null;
@@ -26,7 +28,7 @@ public class JavaScriptUmlVfsResolver implements DiagramVfsResolver<PsiElement> 
         if (element instanceof JSClass) {
             String name = ((JSClass) element).getQualifiedName();
             if (name == null) return null;
-            return String.join("#", virtualFile.getPath(), name, Integer.toString(element.getTextOffset()));
+            return String.join(SEPARATOR, virtualFile.getPath(), name, Integer.toString(element.getTextOffset()));
         }
         if (element instanceof JSFile) {
             return virtualFile.getPath();
@@ -36,7 +38,7 @@ public class JavaScriptUmlVfsResolver implements DiagramVfsResolver<PsiElement> 
 
     @Override
     public @Nullable PsiElement resolveElementByFQN(@NotNull String s, @NotNull Project project) {
-        String[] parts = s.split("#");
+        String[] parts = s.split(SEPARATOR);
         if (parts.length == 3) {
             return resolveClass(project, parts[0], parts[1], parts[2]);
         }
@@ -48,7 +50,6 @@ public class JavaScriptUmlVfsResolver implements DiagramVfsResolver<PsiElement> 
         if (file == null) return null;
         return PsiManager.getInstance(project).findFile(file);
     }
-
 
     private @Nullable PsiElement resolveClass(@NotNull Project project, String path, String expectedQualifiedName, String offsetStr) {
         int offset = StringUtil.parseInt(offsetStr, -1);

@@ -8,7 +8,7 @@ import org.jetbrains.annotations.PropertyKey;
 
 public class JavaScriptUmlBundle extends DynamicBundle {
     @NonNls
-    private static final String BUNDLE = "messages.DiagramBundle";
+    public static final String BUNDLE = "messages.DiagramBundle";
     private static final JavaScriptUmlBundle INSTANCE = new JavaScriptUmlBundle();
 
     private JavaScriptUmlBundle() {

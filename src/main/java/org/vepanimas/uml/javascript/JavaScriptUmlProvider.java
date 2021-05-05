@@ -16,17 +16,14 @@ import java.util.Collection;
 public class JavaScriptUmlProvider extends DiagramProvider<PsiElement> {
     public static final String ID = "JavaScriptClasses";
 
-    private final JavaScriptUmlElementManager myElementManager;
-    private final JavaScriptUmlVfsResolver myVfsResolver;
-    private final JavaScriptUmlVisibilityManager myVisibilityManager;
-    private final JavaScriptUmlExtras myExtras;
+    private final JavaScriptUmlElementManager myElementManager = new JavaScriptUmlElementManager();
+    private final JavaScriptUmlVfsResolver myVfsResolver = new JavaScriptUmlVfsResolver();
+    private final JavaScriptUmlVisibilityManager myVisibilityManager = new JavaScriptUmlVisibilityManager();
+    private final JavaScriptUmlExtras myExtras = new JavaScriptUmlExtras();
+    private final JavaScriptUmlEdgeCreationPolicy myEdgeCreationPolicy = new JavaScriptUmlEdgeCreationPolicy();
+    private final JavaScriptUmlRelationshipManager myRelationshipManager = new JavaScriptUmlRelationshipManager();
 
     public JavaScriptUmlProvider() {
-        myElementManager = new JavaScriptUmlElementManager();
-        myVisibilityManager = new JavaScriptUmlVisibilityManager();
-        myVfsResolver = new JavaScriptUmlVfsResolver();
-        myExtras = new JavaScriptUmlExtras();
-
         myElementManager.setUmlProvider(this);
     }
 
@@ -77,12 +74,6 @@ public class JavaScriptUmlProvider extends DiagramProvider<PsiElement> {
     }
 
     @Override
-    public @NotNull DiagramRelationshipManager<PsiElement> getRelationshipManager() {
-        //noinspection unchecked
-        return (DiagramRelationshipManager<PsiElement>) DiagramRelationshipManager.NO_RELATIONSHIP_MANAGER;
-    }
-
-    @Override
     public @NotNull DiagramNodeContentManager createNodeContentManager() {
         return new JavaScriptUmlNodeContentManager();
     }
@@ -95,5 +86,15 @@ public class JavaScriptUmlProvider extends DiagramProvider<PsiElement> {
     @Override
     public @NotNull DiagramExtras<PsiElement> getExtras() {
         return myExtras;
+    }
+
+    @Override
+    public @NotNull DiagramRelationshipManager<PsiElement> getRelationshipManager() {
+        return myRelationshipManager;
+    }
+
+    @Override
+    public @Nullable DiagramEdgeCreationPolicy<PsiElement> getEdgeCreationPolicy() {
+        return myEdgeCreationPolicy;
     }
 }

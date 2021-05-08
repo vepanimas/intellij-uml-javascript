@@ -14,6 +14,7 @@ import com.intellij.psi.PsiManager;
 import com.intellij.psi.SmartPointerManager;
 import com.intellij.psi.SmartPsiElementPointer;
 import com.intellij.psi.util.PsiTreeUtil;
+import com.intellij.uml.java.JavaUmlRelationships;
 import com.intellij.util.CommonProcessors;
 import com.intellij.util.Processor;
 import com.intellij.util.containers.ContainerUtil;
@@ -21,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
@@ -67,6 +69,17 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
     }
 
     @Override
+    public @NotNull Collection<DiagramEdge<PsiElement>> getEdges() {
+        if (myDependencyEdges.isEmpty()) {
+            return new HashSet<>(myEdges);
+        } else {
+            final var allEdges = new HashSet<>(myEdges);
+            allEdges.addAll(myDependencyEdges);
+            return allEdges;
+        }
+    }
+
+    @Override
     public @NotNull String getNodeName(@NotNull DiagramNode<PsiElement> diagramNode) {
         final PsiElement element = diagramNode.getIdentifyingElement();
         if (element instanceof JSClass) {
@@ -110,7 +123,7 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
 
         addedClasses.add(element);
         if (addParents) {
-            processClassParents(element, new CommonProcessors.CollectProcessor<>(addedClasses));
+            processParents(element, new CommonProcessors.CollectProcessor<>(addedClasses));
         }
 
         for (JSClass addedClass : addedClasses) {
@@ -143,34 +156,33 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
         myClasses.remove(getFqn(jsClass));
     }
 
-    private void processClassParents(@NotNull JSClass element, @NotNull Processor<JSClass> processor) {
-        Queue<JSClass> queue = new ArrayDeque<>();
-        Set<JSClass> visited = new HashSet<>();
+    private @Nullable JavaScriptUmlEdge addEdge(@NotNull DiagramNode<PsiElement> from,
+                                                @NotNull DiagramNode<PsiElement> to,
+                                                @NotNull DiagramRelationshipInfo relationship) {
+        return addEdge(from, to, relationship, myEdges);
+    }
 
-        queue.add(element);
-        while (!queue.isEmpty()) {
-            JSClass jsClass = queue.poll();
-            if (visited.add(jsClass)) {
-                if (!processor.process(jsClass)) return;
-            } else {
-                continue;
-            }
+    public @Nullable JavaScriptUmlEdge addDependencyEdge(@NotNull DiagramNode<PsiElement> from,
+                                                         @NotNull DiagramNode<PsiElement> to,
+                                                         @NotNull DiagramRelationshipInfo relationship) {
+        return addEdge(from, to, relationship, myDependencyEdges);
+    }
 
-            if (ignoreParentsFor(jsClass)) {
-                continue;
-            }
-
-            Collections.addAll(queue, jsClass.getSupers());
+    private static @Nullable JavaScriptUmlEdge addEdge(@NotNull DiagramNode<PsiElement> from,
+                                                       @NotNull DiagramNode<PsiElement> to,
+                                                       @NotNull DiagramRelationshipInfo relationship,
+                                                       @NotNull Collection<DiagramEdge<PsiElement>> storage) {
+        for (DiagramEdge<PsiElement> edge : storage) {
+            if (edge.getSource() == from && edge.getTarget() == to && relationship.equals(edge.getRelationship())) return null;
         }
+
+        JavaScriptUmlEdge result = new JavaScriptUmlEdge(from, to, relationship);
+        storage.add(result);
+        return result;
     }
 
-    private static boolean ignoreParentsFor(@NotNull JSClass jsClass) {
-        return jsClass instanceof TypeScriptEnum;
-    }
-
-    @Override
-    public @NotNull Collection<? extends DiagramEdge<PsiElement>> getEdges() {
-        return myEdges;
+    private static boolean showParentsFor(@NotNull JSClass jsClass) {
+        return !(jsClass instanceof TypeScriptEnum);
     }
 
     @Override
@@ -192,9 +204,147 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
 
     private void updateModel() {
         Set<JSClass> classes = getAllClasses();
+        Set<JSClass> interfaces = new HashSet<>();
+
         for (JSClass jsClass : classes) {
             myNodes.add(createNode(jsClass));
+
+            if (jsClass.isInterface()) {
+                interfaces.add(jsClass);
+            }
         }
+
+        for (JSClass jsClass : classes) {
+            DiagramNode<PsiElement> source = findNode(jsClass);
+            if (source == null) continue;
+
+            addClassGeneralizationEdges(jsClass, source, classes);
+            addInterfaceGeneralizationEdges(jsClass, source, interfaces);
+            addInterfaceRealizationEdges(jsClass, source, classes);
+        }
+    }
+
+    private void addClassGeneralizationEdges(@NotNull JSClass jsClass,
+                                             @NotNull DiagramNode<PsiElement> source,
+                                             @NotNull Set<JSClass> visibleElements) {
+        if (jsClass.isInterface()) return;
+
+        JSClass targetClass = findFirstReachableSuperClass(jsClass, visibleElements);
+        DiagramNode<PsiElement> target = findNode(targetClass);
+        if (target != null && source != target) {
+            addEdge(source, target, JavaUmlRelationships.GENERALIZATION);
+        }
+    }
+
+    private void addInterfaceGeneralizationEdges(@NotNull JSClass jsClass,
+                                                 @NotNull DiagramNode<PsiElement> source,
+                                                 @NotNull Set<JSClass> visibleElements) {
+        if (!jsClass.isInterface()) return;
+
+        for (JSClass reachableInterface : findReachableInterfaces(jsClass, visibleElements)) {
+            var target = findNode(reachableInterface);
+            if (target != null && source != target) {
+                addEdge(source, target, JavaUmlRelationships.INTERFACE_GENERALIZATION);
+            }
+        }
+    }
+
+    private void addInterfaceRealizationEdges(@NotNull JSClass jsClass,
+                                              @NotNull DiagramNode<PsiElement> source,
+                                              @NotNull Set<JSClass> visibleElements) {
+        if (jsClass.isInterface()) return;
+
+        Queue<JSClass> interfaces = new ArrayDeque<>();
+        ContainerUtil.addAll(interfaces, jsClass.getImplementedInterfaces());
+
+        Processor<JSClass> processor = superClass -> {
+            if (!visibleElements.contains(superClass)) {
+                ContainerUtil.addAll(interfaces, superClass.getImplementedInterfaces());
+                return true;
+            }
+            return false;
+        };
+        processParents(jsClass, processor, JSClass::getSuperClasses);
+
+        Set<JSClass> visited = new HashSet<>();
+        while (!interfaces.isEmpty()) {
+            var jsInterface = interfaces.poll();
+            if (!visited.add(jsInterface)) continue;
+
+            DiagramNode<PsiElement> target = findNode(jsInterface);
+            if (target != null) {
+                if (source != target) {
+                    addEdge(source, target, JavaUmlRelationships.REALIZATION);
+                }
+            } else {
+                ContainerUtil.addAll(interfaces, jsInterface.getSuperClasses());
+            }
+        }
+    }
+
+    private static void processParents(@NotNull JSClass element, @NotNull Processor<JSClass> processor) {
+        processParents(element, processor, JSClass::getSupers, Collections.emptySet());
+    }
+
+    private static void processParents(@NotNull JSClass element,
+                                       @NotNull Processor<JSClass> processor,
+                                       @NotNull Function<JSClass, JSClass[]> getParents) {
+        processParents(element, processor, getParents, Collections.emptySet());
+    }
+
+    private static void processParents(@NotNull JSClass element,
+                                       @NotNull Processor<JSClass> processor,
+                                       @NotNull Set<JSClass> stopAt) {
+        processParents(element, processor, JSClass::getSupers, stopAt);
+    }
+
+    private static void processParents(@NotNull JSClass element,
+                                       @NotNull Processor<JSClass> processor,
+                                       @NotNull Function<JSClass, JSClass[]> getParents,
+                                       @NotNull Set<JSClass> stopAt) {
+        if (!showParentsFor(element)) return;
+
+        Queue<JSClass> queue = new ArrayDeque<>();
+        Set<JSClass> visited = new HashSet<>();
+
+        visited.add(element);
+        Collections.addAll(queue, getParents.apply(element));
+
+        while (!queue.isEmpty()) {
+            JSClass jsClass = queue.poll();
+            if (!visited.add(jsClass)) continue;
+            if (!processor.process(jsClass)) return;
+
+            // prevent the tree walk-up for this subtree branch
+            if (stopAt.contains(jsClass)) {
+                continue;
+            }
+            if (showParentsFor(jsClass)) {
+                Collections.addAll(queue, getParents.apply(jsClass));
+            }
+        }
+    }
+
+    private @Nullable JSClass findFirstReachableSuperClass(@NotNull JSClass jsClass, @NotNull Set<JSClass> stopAt) {
+        CommonProcessors.FindProcessor<JSClass> processor = new CommonProcessors.FindProcessor<>() {
+            @Override
+            protected boolean accept(JSClass jsClass) {
+                return stopAt.contains(jsClass);
+            }
+        };
+        processParents(jsClass, processor, JSClass::getSuperClasses);
+        return processor.getFoundValue();
+    }
+
+    private @NotNull Collection<JSClass> findReachableInterfaces(@NotNull JSClass jsClass, @NotNull Set<JSClass> stopAt) {
+        CommonProcessors.CollectProcessor<JSClass> processor = new CommonProcessors.CollectProcessor<>() {
+            @Override
+            protected boolean accept(JSClass jsClass) {
+                return stopAt.contains(jsClass);
+            }
+        };
+        processParents(jsClass, processor, stopAt);
+        return processor.getResults();
     }
 
     private @NotNull Set<JSClass> getAllClasses() {

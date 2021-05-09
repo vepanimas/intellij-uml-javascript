@@ -9,6 +9,7 @@ import com.intellij.psi.PsiElement;
 import com.intellij.uml.utils.DiagramBundle;
 import org.jetbrains.annotations.NotNull;
 import org.vepanimas.uml.javascript.actions.JavaScriptAddElementAction;
+import org.vepanimas.uml.javascript.dependencies.JavaScriptUmlDependenciesSettingsOption;
 
 
 public final class JavaScriptUmlExtras extends DiagramExtras<PsiElement> {
@@ -17,8 +18,8 @@ public final class JavaScriptUmlExtras extends DiagramExtras<PsiElement> {
     private final DiagramConfigGroup[] myAdditionalSettings;
 
     JavaScriptUmlExtras() {
-        DiagramConfigGroup dependenciesGroup = new DiagramConfigGroup(DiagramBundle.message("uml.dependencies.settings.group.title"));
-        for (JavaScriptUmlDependenciesSettingsOption option : JavaScriptUmlDependenciesSettingsOption.values()) {
+        DiagramConfigGroup dependenciesGroup = new DiagramConfigGroup(getConfigGroupName());
+        for (var option : JavaScriptUmlDependenciesSettingsOption.values()) {
             dependenciesGroup.addElement(new DiagramConfigElement(option.getDisplayName(), true));
         }
         myAdditionalSettings = new DiagramConfigGroup[]{dependenciesGroup};
@@ -41,5 +42,9 @@ public final class JavaScriptUmlExtras extends DiagramExtras<PsiElement> {
     @Override
     public boolean isExpandCollapseActionsImplemented() {
         return true;
+    }
+
+    public static @NotNull String getConfigGroupName() {
+        return DiagramBundle.message("uml.dependencies.settings.group.title");
     }
 }

@@ -4,6 +4,12 @@ import com.intellij.diagram.*;
 import com.intellij.lang.javascript.psi.JSFile;
 import com.intellij.lang.javascript.psi.ecma6.TypeScriptEnum;
 import com.intellij.lang.javascript.psi.ecmal4.JSClass;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ReadAction;
+import com.intellij.openapi.command.undo.UndoManager;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.CompositeModificationTracker;
 import com.intellij.openapi.util.ModificationTracker;
@@ -14,12 +20,14 @@ import com.intellij.psi.PsiManager;
 import com.intellij.psi.SmartPointerManager;
 import com.intellij.psi.SmartPsiElementPointer;
 import com.intellij.psi.util.PsiTreeUtil;
-import com.intellij.uml.java.JavaUmlRelationships;
+import com.intellij.uml.utils.DiagramBundle;
 import com.intellij.util.CommonProcessors;
 import com.intellij.util.Processor;
 import com.intellij.util.containers.ContainerUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.vepanimas.uml.javascript.dependencies.JavaScriptUmlDependenciesAnalyzer;
+import org.vepanimas.uml.javascript.dependencies.JavaScriptUmlDependencyInfo;
 
 import java.util.*;
 import java.util.function.Function;
@@ -38,6 +46,8 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
     private final @NotNull Set<DiagramNode<PsiElement>> myNodes = new HashSet<>();
     private final @NotNull Set<DiagramEdge<PsiElement>> myEdges = new HashSet<>();
     private final @NotNull Set<DiagramEdge<PsiElement>> myDependencyEdges = new HashSet<>();
+
+    private final Object myLock = new Object();
 
     public JavaScriptUmlDataModel(
             @NotNull Project project,
@@ -156,29 +166,28 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
         myClasses.remove(getFqn(jsClass));
     }
 
-    private @Nullable JavaScriptUmlEdge addEdge(@NotNull DiagramNode<PsiElement> from,
-                                                @NotNull DiagramNode<PsiElement> to,
-                                                @NotNull DiagramRelationshipInfo relationship) {
-        return addEdge(from, to, relationship, myEdges);
+    private void addEdge(@NotNull DiagramNode<PsiElement> from,
+                         @NotNull DiagramNode<PsiElement> to,
+                         @NotNull DiagramRelationshipInfo relationship) {
+        addEdge(from, to, relationship, myEdges);
     }
 
-    public @Nullable JavaScriptUmlEdge addDependencyEdge(@NotNull DiagramNode<PsiElement> from,
-                                                         @NotNull DiagramNode<PsiElement> to,
-                                                         @NotNull DiagramRelationshipInfo relationship) {
-        return addEdge(from, to, relationship, myDependencyEdges);
+    public void addDependencyEdge(@NotNull DiagramNode<PsiElement> from,
+                                  @NotNull DiagramNode<PsiElement> to,
+                                  @NotNull DiagramRelationshipInfo relationship) {
+        addEdge(from, to, relationship, myDependencyEdges);
     }
 
-    private static @Nullable JavaScriptUmlEdge addEdge(@NotNull DiagramNode<PsiElement> from,
-                                                       @NotNull DiagramNode<PsiElement> to,
-                                                       @NotNull DiagramRelationshipInfo relationship,
-                                                       @NotNull Collection<DiagramEdge<PsiElement>> storage) {
+    private static void addEdge(@NotNull DiagramNode<PsiElement> from,
+                                @NotNull DiagramNode<PsiElement> to,
+                                @NotNull DiagramRelationshipInfo relationship,
+                                @NotNull Collection<DiagramEdge<PsiElement>> storage) {
         for (DiagramEdge<PsiElement> edge : storage) {
-            if (edge.getSource() == from && edge.getTarget() == to && relationship.equals(edge.getRelationship())) return null;
+            if (edge.getSource() == from && edge.getTarget() == to && relationship.equals(edge.getRelationship())) return;
         }
 
         JavaScriptUmlEdge result = new JavaScriptUmlEdge(from, to, relationship);
         storage.add(result);
-        return result;
     }
 
     private static boolean showParentsFor(@NotNull JSClass jsClass) {
@@ -222,6 +231,14 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
             addInterfaceGeneralizationEdges(jsClass, source, interfaces);
             addInterfaceRealizationEdges(jsClass, source, classes);
         }
+
+        if (isShowDependencies()) {
+            if (UndoManager.getInstance(getProject()).isUndoOrRedoInProgress()) {
+                doShowDependenciesNow(null, classes);
+            } else {
+                showDependenciesLater(classes);
+            }
+        }
     }
 
     private void addClassGeneralizationEdges(@NotNull JSClass jsClass,
@@ -232,7 +249,7 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
         JSClass targetClass = findFirstReachableSuperClass(jsClass, visibleElements);
         DiagramNode<PsiElement> target = findNode(targetClass);
         if (target != null && source != target) {
-            addEdge(source, target, JavaUmlRelationships.GENERALIZATION);
+            addEdge(source, target, JavaScriptUmlRelationship.GENERALIZATION);
         }
     }
 
@@ -244,7 +261,7 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
         for (JSClass reachableInterface : findReachableInterfaces(jsClass, visibleElements)) {
             var target = findNode(reachableInterface);
             if (target != null && source != target) {
-                addEdge(source, target, JavaUmlRelationships.INTERFACE_GENERALIZATION);
+                addEdge(source, target, JavaScriptUmlRelationship.INTERFACE_GENERALIZATION);
             }
         }
     }
@@ -274,12 +291,65 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
             DiagramNode<PsiElement> target = findNode(jsInterface);
             if (target != null) {
                 if (source != target) {
-                    addEdge(source, target, JavaUmlRelationships.REALIZATION);
+                    addEdge(source, target, JavaScriptUmlRelationship.REALIZATION);
                 }
             } else {
                 ContainerUtil.addAll(interfaces, jsInterface.getSuperClasses());
             }
         }
+    }
+
+    private void showDependenciesLater(@NotNull Set<? extends JSClass> classes) {
+        ApplicationManager.getApplication().invokeLater(() -> ProgressManager.getInstance().run(
+                new Task.Modal(getProject(), DiagramBundle.message("javascript.uml.calculating.dependencies"), true) {
+                    @Override
+                    public void run(@NotNull ProgressIndicator indicator) {
+                        synchronized (myLock) {
+                            doShowDependenciesNow(indicator, classes);
+                            ApplicationManager.getApplication().invokeLater(() -> getBuilder().update(true, false));
+                        }
+                    }
+
+                    @Override
+                    public void onCancel() {
+                        setShowDependencies(false);
+                    }
+                }));
+    }
+
+    private void doShowDependenciesNow(@Nullable ProgressIndicator indicator, @NotNull Set<? extends JSClass> classes) {
+        if (indicator != null) indicator.setIndeterminate(false);
+        Map<DiagramNode<PsiElement>, Collection<JavaScriptUmlDependencyInfo>> computedDependencies = new HashMap<>();
+        int classIdx = 1;
+        for (JSClass jsClass : classes) {
+            if (indicator != null) indicator.checkCanceled();
+
+            ReadAction.run(() -> {
+                if (indicator != null) {
+                    indicator.setText(DiagramBundle.message("javascript.uml.analyzing", jsClass.getName()));
+                }
+                DiagramNode<PsiElement> sourceNode = findNode(jsClass);
+                if (sourceNode != null) {
+                    computedDependencies.put(sourceNode, new JavaScriptUmlDependenciesAnalyzer().compute(jsClass));
+                }
+            });
+
+            classIdx++;
+            if (indicator != null) indicator.setFraction((double) classIdx / classes.size());
+        }
+
+        ReadAction.run(() -> {
+            for (var dependencyInfo : computedDependencies.entrySet()) {
+                if (indicator != null) indicator.checkCanceled();
+                var source = dependencyInfo.getKey();
+                for (var dependency : dependencyInfo.getValue()) {
+                    var target = findNode(dependency.getTarget());
+                    if (target != null) {
+                        addDependencyEdge(source, target, dependency.getRelationshipInfo());
+                    }
+                }
+            }
+        });
     }
 
     private static void processParents(@NotNull JSClass element, @NotNull Processor<JSClass> processor) {

@@ -22,27 +22,16 @@ public interface JavaScriptUmlRelationship extends DiagramRelationshipInfo {
     @Nullable
     PsiElement getElement();
 
-    String DEPENDENCY = "DEPENDENCY";
-    String CREATE = "CREATE";
     String ONE_TO_ONE = "ONE_TO_ONE";
     String ONE_TO_MANY = "ONE_TO_MANY";
+    String DEPENDENCY = "DEPENDENCY";
+    String CREATE = "CREATE";
 
     DiagramRelationshipInfo INTERFACE_GENERALIZATION = DiagramRelationships.INTERFACE_GENERALIZATION;
     DiagramRelationshipInfo GENERALIZATION = DiagramRelationships.GENERALIZATION;
     DiagramRelationshipInfo REALIZATION = DiagramRelationships.REALIZATION;
-    DiagramRelationshipInfo ANNOTATION = DiagramRelationships.ANNOTATION;
 
     final class Factory {
-
-        public static JavaScriptUmlRelationship dependency(@Nullable String label, @NotNull PsiElement element) {
-            return new Impl(DEPENDENCY, DiagramLineType.DASHED, StringUtil.notNullize(label), null, null, 1,
-                    DiagramRelationships.getAngleArrow(), null, element, label != null);
-        }
-
-        public static JavaScriptUmlRelationship create(@NotNull PsiElement element) {
-            return new Impl(CREATE, DiagramLineType.DASHED, DiagramRelationships.CREATE.getLabel(), null, null, 1,
-                    DiagramRelationships.getAngleArrow(), null, element, false);
-        }
 
         public static JavaScriptUmlRelationship oneToOne(String label, @NotNull PsiElement element) {
             return new Impl(ONE_TO_ONE, DiagramLineType.SOLID, label, "1", "1", 1, DiagramRelationships.getAngleArrow(), DIAMOND, element,
@@ -52,6 +41,16 @@ public interface JavaScriptUmlRelationship extends DiagramRelationshipInfo {
         public static JavaScriptUmlRelationship oneToMany(String label, @NotNull PsiElement element) {
             return new Impl(ONE_TO_MANY, DiagramLineType.SOLID, label, "1", "*", 1, DiagramRelationships.getAngleArrow(), DIAMOND, element,
                     true);
+        }
+
+        public static JavaScriptUmlRelationship dependency(@Nullable String label, @NotNull PsiElement element) {
+            return new Impl(DEPENDENCY, DiagramLineType.DASHED, StringUtil.notNullize(label), null, null, 1,
+                    DiagramRelationships.getAngleArrow(), null, element, label != null);
+        }
+
+        public static JavaScriptUmlRelationship create(@NotNull PsiElement element) {
+            return new Impl(CREATE, DiagramLineType.DASHED, DiagramRelationships.CREATE.getLabel(), null, null, 1,
+                    DiagramRelationships.getAngleArrow(), null, element, false);
         }
 
         private static class Impl extends DiagramRelationshipInfoAdapter implements JavaScriptUmlRelationship {

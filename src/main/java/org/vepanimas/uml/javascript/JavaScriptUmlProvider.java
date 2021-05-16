@@ -92,9 +92,4 @@ public class JavaScriptUmlProvider extends DiagramProvider<PsiElement> {
     public @NotNull DiagramRelationshipManager<PsiElement> getRelationshipManager() {
         return myRelationshipManager;
     }
-
-    @Override
-    public @Nullable DiagramEdgeCreationPolicy<PsiElement> getEdgeCreationPolicy() {
-        return myEdgeCreationPolicy;
-    }
 }

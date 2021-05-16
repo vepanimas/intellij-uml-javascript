@@ -20,8 +20,8 @@ import com.intellij.psi.PsiManager;
 import com.intellij.psi.SmartPointerManager;
 import com.intellij.psi.SmartPsiElementPointer;
 import com.intellij.psi.util.PsiTreeUtil;
-import com.intellij.uml.utils.DiagramBundle;
 import com.intellij.util.CommonProcessors;
+import com.intellij.util.ObjectUtils;
 import com.intellij.util.Processor;
 import com.intellij.util.containers.ContainerUtil;
 import org.jetbrains.annotations.NotNull;
@@ -32,6 +32,7 @@ import org.vepanimas.uml.javascript.dependencies.JavaScriptUmlDependencyInfo;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
     private final VirtualFile myEditorFile;
@@ -178,16 +179,40 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
         addEdge(from, to, relationship, myDependencyEdges);
     }
 
-    private static void addEdge(@NotNull DiagramNode<PsiElement> from,
-                                @NotNull DiagramNode<PsiElement> to,
-                                @NotNull DiagramRelationshipInfo relationship,
-                                @NotNull Collection<DiagramEdge<PsiElement>> storage) {
+    private void addEdge(@NotNull DiagramNode<PsiElement> from,
+                         @NotNull DiagramNode<PsiElement> to,
+                         @NotNull DiagramRelationshipInfo relationship,
+                         @NotNull Collection<DiagramEdge<PsiElement>> storage) {
+        JavaScriptUmlEdge newEdge = new JavaScriptUmlEdge(from, to, relationship);
+
+        if (Stream.concat(myEdges.stream(), myDependencyEdges.stream()).anyMatch(edge1 -> isEdgeIgnored(edge1, newEdge))) return;
+
+        for (DiagramEdge<PsiElement> suppressedEdge : ContainerUtil.filter(myDependencyEdges, edge -> isEdgeIgnored(newEdge, edge))) {
+            myDependencyEdges.remove(suppressedEdge);
+        }
+
         for (DiagramEdge<PsiElement> edge : storage) {
             if (edge.getSource() == from && edge.getTarget() == to && relationship.equals(edge.getRelationship())) return;
         }
 
-        JavaScriptUmlEdge result = new JavaScriptUmlEdge(from, to, relationship);
-        storage.add(result);
+        storage.add(newEdge);
+    }
+
+    public boolean isEdgeIgnored(@NotNull DiagramEdge<PsiElement> subEdge, @NotNull DiagramEdge<PsiElement> candidate) {
+        JavaScriptUmlRelationship candidateRelationship = ObjectUtils.tryCast(candidate.getRelationship(), JavaScriptUmlRelationship.class);
+        if (candidateRelationship == null || !candidateRelationship.getType().equals(JavaScriptUmlRelationship.DEPENDENCY)) return false;
+
+        boolean sameElements = Objects.equals(subEdge.getSource(), candidate.getSource())
+                && Objects.equals(subEdge.getTarget(), candidate.getTarget());
+        if (!sameElements) return false;
+
+        JavaScriptUmlRelationship relationship = ObjectUtils.tryCast(subEdge.getRelationship(), JavaScriptUmlRelationship.class);
+        if (relationship == null) return false;
+
+        return relationship == JavaScriptUmlRelationship.GENERALIZATION
+                || relationship == JavaScriptUmlRelationship.INTERFACE_GENERALIZATION
+                || relationship == JavaScriptUmlRelationship.REALIZATION
+                || relationship.getType().equals(JavaScriptUmlRelationship.CREATE);
     }
 
     private static boolean showParentsFor(@NotNull JSClass jsClass) {
@@ -301,7 +326,7 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
 
     private void showDependenciesLater(@NotNull Set<? extends JSClass> classes) {
         ApplicationManager.getApplication().invokeLater(() -> ProgressManager.getInstance().run(
-                new Task.Modal(getProject(), DiagramBundle.message("javascript.uml.calculating.dependencies"), true) {
+                new Task.Modal(getProject(), JavaScriptUmlBundle.message("javascript.uml.calculating.dependencies"), true) {
                     @Override
                     public void run(@NotNull ProgressIndicator indicator) {
                         synchronized (myLock) {
@@ -326,7 +351,7 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
 
             ReadAction.run(() -> {
                 if (indicator != null) {
-                    indicator.setText(DiagramBundle.message("javascript.uml.analyzing", jsClass.getName()));
+                    indicator.setText(JavaScriptUmlBundle.message("javascript.uml.analyzing", jsClass.getName()));
                 }
                 DiagramNode<PsiElement> sourceNode = findNode(jsClass);
                 if (sourceNode != null) {

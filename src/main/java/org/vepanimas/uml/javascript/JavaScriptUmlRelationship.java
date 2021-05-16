@@ -39,7 +39,7 @@ public interface JavaScriptUmlRelationship extends DiagramRelationshipInfo {
         }
 
         public static JavaScriptUmlRelationship oneToMany(String label, @NotNull PsiElement element) {
-            return new Impl(ONE_TO_MANY, DiagramLineType.SOLID, label, "1", "*", 1, DiagramRelationships.getAngleArrow(), DIAMOND, element,
+            return new Impl(ONE_TO_MANY, DiagramLineType.SOLID, label, "*", "1", 1, DiagramRelationships.getAngleArrow(), DIAMOND, element,
                     true);
         }
 

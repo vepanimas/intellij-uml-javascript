@@ -14,7 +14,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.CompositeModificationTracker;
 import com.intellij.openapi.util.ModificationTracker;
 import com.intellij.openapi.util.SimpleModificationTracker;
-import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiManager;
 import com.intellij.psi.SmartPointerManager;
@@ -35,8 +34,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
-    private final VirtualFile myEditorFile;
-    private final DiagramPresentationModel myPresentationModel;
     private final SmartPointerManager mySmartPointerManager;
     private final SimpleModificationTracker myModificationTracker;
 
@@ -50,16 +47,9 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
 
     private final Object myLock = new Object();
 
-    public JavaScriptUmlDataModel(
-            @NotNull Project project,
-            @Nullable PsiElement psiElement,
-            @Nullable VirtualFile file,
-            @NotNull DiagramPresentationModel presentationModel
-    ) {
+    public JavaScriptUmlDataModel(@NotNull Project project, @Nullable PsiElement psiElement) {
         super(project, Objects.requireNonNull(DiagramProvider.findByID(JavaScriptUmlProvider.ID)));
 
-        myEditorFile = file;
-        myPresentationModel = presentationModel;
         mySmartPointerManager = SmartPointerManager.getInstance(getProject());
         myInitialElement = psiElement != null ? mySmartPointerManager.createSmartPsiElementPointer(psiElement) : null;
         myModificationTracker = new CompositeModificationTracker(PsiManager.getInstance(getProject()).getModificationTracker());
@@ -76,17 +66,21 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
 
     @Override
     public @NotNull Collection<? extends DiagramNode<PsiElement>> getNodes() {
-        return new ArrayList<>(myNodes);
+        synchronized (myLock) {
+            return new ArrayList<>(myNodes);
+        }
     }
 
     @Override
     public @NotNull Collection<DiagramEdge<PsiElement>> getEdges() {
-        if (myDependencyEdges.isEmpty()) {
-            return new HashSet<>(myEdges);
-        } else {
-            final var allEdges = new HashSet<>(myEdges);
-            allEdges.addAll(myDependencyEdges);
-            return allEdges;
+        synchronized (myLock) {
+            if (myDependencyEdges.isEmpty()) {
+                return new HashSet<>(myEdges);
+            } else {
+                final var allEdges = new HashSet<>(myEdges);
+                allEdges.addAll(myDependencyEdges);
+                return allEdges;
+            }
         }
     }
 
@@ -101,11 +95,13 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
 
     @Override
     public @Nullable DiagramNode<PsiElement> addElement(PsiElement element) {
-        DiagramNode<PsiElement> diagramNode = addElement(element, false);
-        if (diagramNode != null) {
-            myModificationTracker.incModificationCount();
+        synchronized (myLock) {
+            DiagramNode<PsiElement> diagramNode = addElement(element, false);
+            if (diagramNode != null) {
+                myModificationTracker.incModificationCount();
+            }
+            return diagramNode;
         }
-        return diagramNode;
     }
 
     private @Nullable DiagramNode<PsiElement> addElement(@Nullable PsiElement element, boolean isInitialization) {
@@ -147,7 +143,9 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
 
     @Override
     public void removeNode(@NotNull DiagramNode<PsiElement> node) {
-        removeElement(node.getIdentifyingElement());
+        synchronized (myLock) {
+            removeElement(node.getIdentifyingElement());
+        }
     }
 
     private void removeElement(@NotNull PsiElement element) {
@@ -173,9 +171,9 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
         addEdge(from, to, relationship, myEdges);
     }
 
-    public void addDependencyEdge(@NotNull DiagramNode<PsiElement> from,
-                                  @NotNull DiagramNode<PsiElement> to,
-                                  @NotNull DiagramRelationshipInfo relationship) {
+    private void addDependencyEdge(@NotNull DiagramNode<PsiElement> from,
+                                   @NotNull DiagramNode<PsiElement> to,
+                                   @NotNull DiagramRelationshipInfo relationship) {
         addEdge(from, to, relationship, myDependencyEdges);
     }
 
@@ -198,7 +196,7 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
         storage.add(newEdge);
     }
 
-    public boolean isEdgeIgnored(@NotNull DiagramEdge<PsiElement> subEdge, @NotNull DiagramEdge<PsiElement> candidate) {
+    private boolean isEdgeIgnored(@NotNull DiagramEdge<PsiElement> subEdge, @NotNull DiagramEdge<PsiElement> candidate) {
         JavaScriptUmlRelationship candidateRelationship = ObjectUtils.tryCast(candidate.getRelationship(), JavaScriptUmlRelationship.class);
         if (candidateRelationship == null || !candidateRelationship.getType().equals(JavaScriptUmlRelationship.DEPENDENCY)) return false;
 
@@ -221,13 +219,17 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
 
     @Override
     public boolean hasElement(@Nullable PsiElement element) {
-        return findNode(element) != null;
+        synchronized (myLock) {
+            return findNode(element) != null;
+        }
     }
 
     @Override
     public void refreshDataModel() {
-        clearNodesAndEdges();
-        updateModel();
+        synchronized (myLock) {
+            clearNodesAndEdges();
+            updateModel();
+        }
     }
 
     private void clearNodesAndEdges() {

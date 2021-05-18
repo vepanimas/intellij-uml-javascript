@@ -55,7 +55,7 @@ public class JavaScriptUmlProvider extends DiagramProvider<PsiElement> {
                                                                  @Nullable PsiElement element,
                                                                  @Nullable VirtualFile virtualFile,
                                                                  @NotNull DiagramPresentationModel diagramPresentationModel) {
-        return new JavaScriptUmlDataModel(project, element, virtualFile, diagramPresentationModel);
+        return new JavaScriptUmlDataModel(project, element);
     }
 
     @Override

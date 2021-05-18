@@ -6,18 +6,17 @@ import com.intellij.lang.javascript.search.JSClassSearch;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
 import com.intellij.util.Processor;
-import gnu.trove.THashSet;
+import com.intellij.util.containers.ContainerUtil;
 import org.vepanimas.uml.javascript.JavaScriptUmlBundle;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 
 public class JavaScriptUmlClassImplementations extends ImplementationsProvider<PsiElement> {
     @Override
     public PsiElement[] getElements(PsiElement element, Project project) {
         JSClass clazz = (JSClass) element;
-        Collection<PsiElement> inheritors = Collections.synchronizedSet(new THashSet<>());
+        Collection<PsiElement> inheritors = ContainerUtil.newConcurrentSet();
 
         Processor<JSClass> p = jsClass -> {
             inheritors.add(jsClass);

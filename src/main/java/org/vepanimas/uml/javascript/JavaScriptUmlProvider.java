@@ -2,7 +2,6 @@ package org.vepanimas.uml.javascript;
 
 import com.intellij.diagram.*;
 import com.intellij.diagram.extras.DiagramExtras;
-import com.intellij.lang.javascript.DialectDetector;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiElement;
@@ -10,8 +9,6 @@ import org.intellij.lang.annotations.Pattern;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Collection;
 
 public class JavaScriptUmlProvider extends DiagramProvider<PsiElement> {
     public static final String ID = "JavaScriptClasses";
@@ -36,18 +33,6 @@ public class JavaScriptUmlProvider extends DiagramProvider<PsiElement> {
     @Override
     public @NotNull String getPresentableName() {
         return JavaScriptUmlBundle.message("javascript.uml.presentable.name");
-    }
-
-    @Override
-    public @NotNull String getRefinedPresentableName(@Nullable PsiElement element,
-                                                     @NotNull Collection<PsiElement> additionalElements) {
-        if (element != null && DialectDetector.isTypeScript(element)) {
-            return JavaScriptUmlBundle.message("javascript.uml.js.ts.presentable.name");
-        }
-
-        return additionalElements.stream().anyMatch(DialectDetector::isTypeScript) ?
-                JavaScriptUmlBundle.message("javascript.uml.js.ts.presentable.name") :
-                getPresentableName();
     }
 
     @Override

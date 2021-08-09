@@ -9,7 +9,7 @@
     <depends>com.intellij.diagram</depends>
 
     <description><![CDATA[
-    <p>Provides support for UML class diagrams in IntelliJ-based IDEs for **JavaScript** and **Typescript** languages.</p>
+    <p>Provides support for UML class diagrams in IntelliJ-based IDEs for <b>JavaScript</b> and <b>TypeScript</b> languages.</p>
     ]]></description>
 
     <resource-bundle>messages.DiagramBundle</resource-bundle>

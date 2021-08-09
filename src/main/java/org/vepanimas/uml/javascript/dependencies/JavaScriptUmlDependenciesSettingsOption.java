@@ -2,7 +2,6 @@ package org.vepanimas.uml.javascript.dependencies;
 
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.PropertyKey;
 import org.vepanimas.uml.javascript.JavaScriptUmlBundle;
 
 public enum JavaScriptUmlDependenciesSettingsOption {
@@ -15,7 +14,7 @@ public enum JavaScriptUmlDependenciesSettingsOption {
 
     private final String myResourceBundleKey;
 
-    JavaScriptUmlDependenciesSettingsOption(@PropertyKey(resourceBundle = JavaScriptUmlBundle.BUNDLE) final String resourceBundleKey) {
+    JavaScriptUmlDependenciesSettingsOption(final String resourceBundleKey) {
         myResourceBundleKey = resourceBundleKey;
     }
 

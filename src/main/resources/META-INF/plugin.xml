@@ -12,7 +12,7 @@
     <p>Provides support for UML class diagrams in IntelliJ-based IDEs for <b>JavaScript</b> and <b>TypeScript</b> languages.</p>
     ]]></description>
 
-    <resource-bundle>messages.DiagramBundle</resource-bundle>
+    <resource-bundle>messages.DiagramJavaScriptBundle</resource-bundle>
 
     <extensions defaultExtensionNs="com.intellij">
         <diagram.Provider implementation="org.vepanimas.uml.javascript.JavaScriptUmlProvider"/>

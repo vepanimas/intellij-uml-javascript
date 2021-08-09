@@ -8,16 +8,18 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.PsiDirectory;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
+import com.intellij.psi.impl.file.PsiDirectoryFactory;
 import com.intellij.psi.util.PsiUtilCore;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class JavaScriptUmlVfsResolver implements DiagramVfsResolver<PsiElement> {
 
-    public static final String SEPARATOR = ":";
+    private static final String SEPARATOR = ":";
 
     @Override
     public @Nullable String getQualifiedName(PsiElement element) {
@@ -32,7 +34,7 @@ public class JavaScriptUmlVfsResolver implements DiagramVfsResolver<PsiElement> 
             String path = FileUtil.toSystemIndependentName(virtualFile.getPath());
             return String.join(SEPARATOR, path, name);
         }
-        if (element instanceof JSFile) {
+        if (element instanceof JSFile || element instanceof PsiDirectory) {
             return virtualFile.getPath();
         }
         return null;
@@ -50,7 +52,9 @@ public class JavaScriptUmlVfsResolver implements DiagramVfsResolver<PsiElement> 
     private @Nullable PsiElement resolveAsFile(@NotNull String path, @NotNull Project project) {
         VirtualFile file = LocalFileSystem.getInstance().findFileByPath(path);
         if (file == null) return null;
-        return PsiManager.getInstance(project).findFile(file);
+        return file.isDirectory() ?
+                PsiDirectoryFactory.getInstance(project).createDirectory(file) :
+                PsiManager.getInstance(project).findFile(file);
     }
 
     private @Nullable PsiElement resolveClass(@NotNull Project project, String path, String expectedQualifiedName) {

@@ -1,12 +1,15 @@
 package org.vepanimas.uml.javascript;
 
 import com.intellij.lang.javascript.DialectDetector;
+import com.intellij.lang.javascript.ecmascript6.TypeScriptUtil;
 import com.intellij.lang.javascript.psi.*;
 import com.intellij.lang.javascript.psi.ecma6.TypeScriptEnum;
 import com.intellij.lang.javascript.psi.ecma6.TypeScriptInterface;
 import com.intellij.lang.javascript.psi.ecmal4.JSClass;
 import com.intellij.lang.javascript.psi.resolve.JSResolveUtil;
+import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.PsiDirectory;
 import com.intellij.psi.PsiElement;
 import com.intellij.util.ObjectUtils;
 import org.jetbrains.annotations.NotNull;
@@ -92,7 +95,7 @@ public final class JavaScriptUmlUtils {
     }
 
     public static boolean isAcceptableAsSource(@Nullable Object object) {
-        if (!(object instanceof PsiElement)) return false;
+        if (object instanceof PsiDirectory) return true;
         if (object instanceof JSFile) {
             return isSupportedLanguageDialect(((JSFile) object));
         }
@@ -110,5 +113,11 @@ public final class JavaScriptUmlUtils {
 
     private static boolean isSupportedLanguageDialect(@NotNull PsiElement element) {
         return DialectDetector.isJavaScript(element) || DialectDetector.isTypeScript(element);
+    }
+
+    public static boolean isSupportedFileType(@Nullable VirtualFile file) {
+        if (file == null) return false;
+        FileType fileType = file.getFileType();
+        return DialectDetector.JAVASCRIPT_FILE_TYPES.contains(fileType) || TypeScriptUtil.TYPESCRIPT_FILE_TYPES.contains(fileType);
     }
 }

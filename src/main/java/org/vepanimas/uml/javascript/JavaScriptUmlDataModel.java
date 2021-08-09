@@ -14,10 +14,9 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.CompositeModificationTracker;
 import com.intellij.openapi.util.ModificationTracker;
 import com.intellij.openapi.util.SimpleModificationTracker;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiManager;
-import com.intellij.psi.SmartPointerManager;
-import com.intellij.psi.SmartPsiElementPointer;
+import com.intellij.openapi.vfs.VfsUtil;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.*;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.util.CommonProcessors;
 import com.intellij.util.ObjectUtils;
@@ -113,7 +112,28 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
         if (element instanceof JSFile) {
             return ContainerUtil.getFirstItem(addFile((JSFile) element));
         }
+        if (element instanceof PsiDirectory) {
+            return ContainerUtil.getFirstItem(addDirectory(element));
+        }
         return null;
+    }
+
+    private @NotNull List<DiagramNode<PsiElement>> addDirectory(@NotNull PsiElement element) {
+        VirtualFile dir = ((PsiDirectory) element).getVirtualFile();
+        Project project = element.getProject();
+        List<DiagramNode<PsiElement>> nodes = new ArrayList<>();
+        VfsUtil.iterateChildrenRecursively(
+                dir,
+                file -> file.isDirectory() || JavaScriptUmlUtils.isSupportedFileType(file),
+                file -> {
+                    PsiFile psiFile = PsiManager.getInstance(project).findFile(file);
+                    if (psiFile instanceof JSFile) {
+                        nodes.addAll(addFile(((JSFile) psiFile)));
+                    }
+                    return true;
+                }
+        );
+        return nodes;
     }
 
     private @NotNull List<DiagramNode<PsiElement>> addFile(@NotNull JSFile file) {
@@ -183,14 +203,16 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
                          @NotNull Collection<DiagramEdge<PsiElement>> storage) {
         JavaScriptUmlEdge newEdge = new JavaScriptUmlEdge(from, to, relationship);
 
-        if (Stream.concat(myEdges.stream(), myDependencyEdges.stream()).anyMatch(edge1 -> isEdgeIgnored(edge1, newEdge))) return;
+        if (Stream.concat(myEdges.stream(), myDependencyEdges.stream()).anyMatch(edge1 -> isEdgeIgnored(edge1, newEdge)))
+            return;
 
         for (DiagramEdge<PsiElement> suppressedEdge : ContainerUtil.filter(myDependencyEdges, edge -> isEdgeIgnored(newEdge, edge))) {
             myDependencyEdges.remove(suppressedEdge);
         }
 
         for (DiagramEdge<PsiElement> edge : storage) {
-            if (edge.getSource() == from && edge.getTarget() == to && relationship.equals(edge.getRelationship())) return;
+            if (edge.getSource() == from && edge.getTarget() == to && relationship.equals(edge.getRelationship()))
+                return;
         }
 
         storage.add(newEdge);
@@ -198,7 +220,8 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
 
     private boolean isEdgeIgnored(@NotNull DiagramEdge<PsiElement> subEdge, @NotNull DiagramEdge<PsiElement> candidate) {
         JavaScriptUmlRelationship candidateRelationship = ObjectUtils.tryCast(candidate.getRelationship(), JavaScriptUmlRelationship.class);
-        if (candidateRelationship == null || !candidateRelationship.getType().equals(JavaScriptUmlRelationship.DEPENDENCY)) return false;
+        if (candidateRelationship == null || !candidateRelationship.getType().equals(JavaScriptUmlRelationship.DEPENDENCY))
+            return false;
 
         boolean sameElements = Objects.equals(subEdge.getSource(), candidate.getSource())
                 && Objects.equals(subEdge.getTarget(), candidate.getTarget());

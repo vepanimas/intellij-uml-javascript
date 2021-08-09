@@ -41,3 +41,5 @@ Open the context menu to take advantage of the chart editing features.
 <img src="img/show_implementations_2.png" width="500" height="300"/>
 
 3. Remove selected nodes.
+
+<img src="img/delete.png" width="500" height="400"/>

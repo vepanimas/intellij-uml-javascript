@@ -16,7 +16,7 @@ in a context menu, and then select a `JavaScript and TypeScript Classes` diagram
 
 ### Class structure:
 
-<img src="img/class_structure.png" width="500" height="400"/>
+<img src="img/class_structure.png" width="500" height="420"/>
 
 ### Relationships:
 
@@ -36,10 +36,10 @@ Open the context menu to take advantage of the chart editing features.
 
 2. Add implementations or parents of the selected node.
 
-<img src="img/show_implementations.png" width="500" height="400"/>
+<img src="img/show_implementations.png" width="350" height="250"/>
 
-<img src="img/show_implementations_2.png" width="500" height="300"/>
+<img src="img/show_implementations_2.png" width="350" height="250"/>
 
 3. Remove selected nodes.
 
-<img src="img/delete.png" width="500" height="400"/>
+<img src="img/delete.png" width="350" height="250"/>

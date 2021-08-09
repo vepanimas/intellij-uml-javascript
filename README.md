@@ -38,7 +38,7 @@ Open the context menu to take advantage of the chart editing features.
 
 <img src="img/show_implementations.png" width="350" height="250"/>
 
-<img src="img/show_implementations_2.png" width="350" height="250"/>
+<img src="img/show_implementations_2.png" width="350" height="200"/>
 
 3. Remove selected nodes.
 

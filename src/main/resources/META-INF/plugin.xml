@@ -8,6 +8,10 @@
     <depends>JavaScript</depends>
     <depends>com.intellij.diagram</depends>
 
+    <description><![CDATA[
+    <p>Provides support for UML class diagrams in IntelliJ-based IDEs for **JavaScript** and **Typescript** languages.</p>
+    ]]></description>
+
     <resource-bundle>messages.DiagramBundle</resource-bundle>
 
     <extensions defaultExtensionNs="com.intellij">

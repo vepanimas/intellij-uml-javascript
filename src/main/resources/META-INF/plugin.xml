@@ -9,7 +9,21 @@
     <depends>com.intellij.diagram</depends>
 
     <description><![CDATA[
-    <p>Provides support for UML class diagrams in IntelliJ-based IDEs for <b>JavaScript</b> and <b>TypeScript</b> languages.</p>
+    Provides support for UML class diagrams in IntelliJ-based IDEs for <b>JavaScript</b> and <b>TypeScript</b> languages.
+    The following features are available:
+    <ul>
+        <li>Support for JS and TS classes, interfaces and enums.</li>
+        <li>Class members structure view with respect to the latest JS and TS standards.</li>
+        <li>Diagrams editing: adding and removing nodes, drag-and-drop support.</li>
+        <li>Show parents and implementations.</li>
+    </ul>
+    <h2>Usage:</h2>
+    It's possible to build a diagram from a single class or an interface,
+    a JavaScript or a TypeScript file and from a whole directory.
+    To create a diagram you could use an item called <b>Diagrams</b> in a context menu,
+    and then select a <b>JavaScript and TypeScript Classes</b> diagram type.
+    <br/>
+    More details could be found in the IntelliJ diagrams <a href="https://www.jetbrains.com/help/idea/class-diagram.html">docs</a>.
     ]]></description>
 
     <resource-bundle>messages.DiagramJavaScriptBundle</resource-bundle>

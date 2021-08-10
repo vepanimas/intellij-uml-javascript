@@ -11,6 +11,7 @@ in a context menu, and then select a `JavaScript and TypeScript Classes` diagram
 | ----------- | ----------- |
 | ![Show diagram](img/show_diagram.png) | ![Diagram type](img/diagram_type.png) |
 
+More details could be found in the IntelliJ diagrams [docs](https://www.jetbrains.com/help/idea/class-diagram.html).
 
 ## Features
 

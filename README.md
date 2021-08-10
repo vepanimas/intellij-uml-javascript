@@ -5,7 +5,7 @@ Provides support for UML class diagrams in IntelliJ-based IDEs for **JavaScript*
 ## Usage
 
 It's possible to create a diagram from a single class or an interface, 
-a JavaScript or a TypeScript file and from a directory. To access a diagram you could use an item called `Diagrams....`
+a JavaScript or a TypeScript file and from a directory. To access a diagram you could use an item called `Diagrams`
 in a context menu, and then select a `JavaScript and TypeScript Classes` diagram type. 
 | Context menu | Diagram type |
 | ----------- | ----------- |

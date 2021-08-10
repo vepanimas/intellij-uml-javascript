@@ -23,6 +23,7 @@
     To create a diagram you could use an item called <b>Diagrams</b> in a context menu,
     and then select a <b>JavaScript and TypeScript Classes</b> diagram type.
     <br/>
+    <br/>
     More details could be found in the IntelliJ diagrams <a href="https://www.jetbrains.com/help/idea/class-diagram.html">docs</a>.
     ]]></description>
 

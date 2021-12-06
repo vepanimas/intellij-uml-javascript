@@ -14,13 +14,13 @@ import org.jetbrains.annotations.Nullable;
 
 public class JavaScriptUmlNodeContentManager extends AbstractDiagramNodeContentManager {
     public static final @NotNull DiagramCategory FIELDS =
-            new DiagramCategory(DiagramBundle.messagePointer("category.name.fields"), AllIcons.Nodes.Field);
+            new DiagramCategory(DiagramBundle.messagePointer("category.name.fields"), AllIcons.Nodes.Field, true);
     public static final @NotNull DiagramCategory CONSTRUCTORS =
-            new DiagramCategory(DiagramBundle.messagePointer("category.name.constructors"), UmlIcons.Constructor);
+            new DiagramCategory(DiagramBundle.messagePointer("category.name.constructors"), UmlIcons.Constructor, true);
     public static final @NotNull DiagramCategory METHODS =
-            new DiagramCategory(DiagramBundle.messagePointer("category.name.methods"), AllIcons.Nodes.Method);
+            new DiagramCategory(DiagramBundle.messagePointer("category.name.methods"), AllIcons.Nodes.Method, true);
     public static final @NotNull DiagramCategory PROPERTIES =
-            new DiagramCategory(DiagramBundle.messagePointer("category.name.properties"), AllIcons.Nodes.Property);
+            new DiagramCategory(DiagramBundle.messagePointer("category.name.properties"), AllIcons.Nodes.Property, true);
 
     private final static DiagramCategory @NotNull [] CATEGORIES = {FIELDS, CONSTRUCTORS, METHODS, PROPERTIES};
 

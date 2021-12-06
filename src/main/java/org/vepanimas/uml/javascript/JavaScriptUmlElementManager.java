@@ -23,6 +23,7 @@ import com.intellij.psi.impl.ElementBase;
 import com.intellij.psi.util.PsiFormatUtilBase;
 import com.intellij.ui.SimpleColoredText;
 import com.intellij.ui.SimpleTextAttributes;
+import com.intellij.util.ObjectUtils;
 import com.intellij.util.containers.ContainerUtil;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
@@ -95,10 +96,11 @@ public class JavaScriptUmlElementManager extends AbstractDiagramElementManager<P
     }
 
     @Override
-    public @Nullable SimpleColoredText getItemName(@Nullable Object element, @NotNull DiagramBuilder builder) {
-        if (!(element instanceof PsiNamedElement)) return null;
+    public @Nullable SimpleColoredText getItemName(@Nullable PsiElement nodeElement, @Nullable Object nodeItem, @NotNull DiagramBuilder builder) {
+        PsiNamedElement element = ObjectUtils.tryCast(nodeItem, PsiNamedElement.class);
+        if (element == null) return null;
 
-        String name = ((PsiNamedElement) element).getName();
+        String name = element.getName();
         if (StringUtil.isEmpty(name)) return null;
 
         StringBuilder text = new StringBuilder(name);

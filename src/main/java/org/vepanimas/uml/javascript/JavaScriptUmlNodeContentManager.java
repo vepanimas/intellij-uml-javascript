@@ -1,23 +1,26 @@
 package org.vepanimas.uml.javascript;
 
 import com.intellij.diagram.AbstractDiagramNodeContentManager;
+import com.intellij.diagram.DiagramBuilder;
 import com.intellij.diagram.DiagramCategory;
 import com.intellij.icons.AllIcons;
 import com.intellij.lang.javascript.psi.JSField;
+import com.intellij.psi.PsiElement;
 import com.intellij.uml.UmlIcons;
 import com.intellij.uml.utils.DiagramBundle;
+import com.intellij.util.ObjectUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class JavaScriptUmlNodeContentManager extends AbstractDiagramNodeContentManager {
     public static final @NotNull DiagramCategory FIELDS =
-            new DiagramCategory(DiagramBundle.message("category.name.fields"), AllIcons.Nodes.Field);
+            new DiagramCategory(DiagramBundle.messagePointer("category.name.fields"), AllIcons.Nodes.Field);
     public static final @NotNull DiagramCategory CONSTRUCTORS =
-            new DiagramCategory(DiagramBundle.message("category.name.constructors"), UmlIcons.Constructor);
+            new DiagramCategory(DiagramBundle.messagePointer("category.name.constructors"), UmlIcons.Constructor);
     public static final @NotNull DiagramCategory METHODS =
-            new DiagramCategory(DiagramBundle.message("category.name.methods"), AllIcons.Nodes.Method);
+            new DiagramCategory(DiagramBundle.messagePointer("category.name.methods"), AllIcons.Nodes.Method);
     public static final @NotNull DiagramCategory PROPERTIES =
-            new DiagramCategory(DiagramBundle.message("category.name.properties"), AllIcons.Nodes.Property);
+            new DiagramCategory(DiagramBundle.messagePointer("category.name.properties"), AllIcons.Nodes.Property);
 
     private final static DiagramCategory @NotNull [] CATEGORIES = {FIELDS, CONSTRUCTORS, METHODS, PROPERTIES};
 
@@ -27,7 +30,15 @@ public class JavaScriptUmlNodeContentManager extends AbstractDiagramNodeContentM
     }
 
     @Override
-    public boolean isInCategory(final @Nullable Object element, final @NotNull DiagramCategory category) {
+    public boolean isInCategory(@Nullable Object nodeElement,
+                                @Nullable Object item,
+                                @NotNull DiagramCategory category,
+                                @Nullable DiagramBuilder builder) {
+        PsiElement element = ObjectUtils.tryCast(item, PsiElement.class);
+        if (element == null) {
+            return false;
+        }
+
         if (PROPERTIES.equals(category)) {
             return JavaScriptUmlUtils.isGetterOrSetter(element) || JavaScriptUmlUtils.isInterfaceProperty(element);
         } else if (CONSTRUCTORS.equals(category)) {

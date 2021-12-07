@@ -40,13 +40,13 @@ public class JavaScriptUmlNodeContentManager extends AbstractDiagramNodeContentM
         }
 
         if (PROPERTIES.equals(category)) {
-            return JavaScriptUmlUtils.isGetterOrSetter(element) || JavaScriptUmlUtils.isInterfaceProperty(element);
+            return JavaScriptUmlUtils.isGetterOrSetter(element) || JavaScriptUmlUtils.isInterfaceOrObjectProperty(element);
         } else if (CONSTRUCTORS.equals(category)) {
             return JavaScriptUmlUtils.isConstructor(element);
         } else if (METHODS.equals(category)) {
             return JavaScriptUmlUtils.isMethod(element);
         } else if (FIELDS.equals(category)) {
-            return element instanceof JSField && !JavaScriptUmlUtils.isInterfaceProperty(element);
+            return element instanceof JSField && !JavaScriptUmlUtils.isInterfaceOrObjectProperty(element);
         }
         return false;
     }

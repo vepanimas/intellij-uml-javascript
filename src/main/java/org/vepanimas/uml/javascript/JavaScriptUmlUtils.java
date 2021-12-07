@@ -5,6 +5,7 @@ import com.intellij.lang.javascript.ecmascript6.TypeScriptUtil;
 import com.intellij.lang.javascript.psi.*;
 import com.intellij.lang.javascript.psi.ecma6.TypeScriptEnum;
 import com.intellij.lang.javascript.psi.ecma6.TypeScriptInterface;
+import com.intellij.lang.javascript.psi.ecma6.TypeScriptPropertySignature;
 import com.intellij.lang.javascript.psi.ecmal4.JSClass;
 import com.intellij.lang.javascript.psi.resolve.JSResolveUtil;
 import com.intellij.openapi.fileTypes.FileType;
@@ -86,8 +87,9 @@ public final class JavaScriptUmlUtils {
         return false;
     }
 
-    public static boolean isInterfaceProperty(@Nullable Object element) {
-        return element instanceof JSField && JSResolveUtil.findParent(((JSField) element)) instanceof TypeScriptInterface;
+    public static boolean isInterfaceOrObjectProperty(@Nullable Object element) {
+        return element instanceof JSField && JSResolveUtil.findParent(((JSField) element)) instanceof TypeScriptInterface ||
+                element instanceof TypeScriptPropertySignature;
     }
 
     public static boolean isEnumField(@Nullable Object element) {

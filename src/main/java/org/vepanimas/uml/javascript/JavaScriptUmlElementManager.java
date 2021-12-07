@@ -6,6 +6,9 @@ import com.intellij.diagram.presentation.DiagramState;
 import com.intellij.icons.AllIcons;
 import com.intellij.lang.javascript.presentable.JSFormatUtil;
 import com.intellij.lang.javascript.psi.*;
+import com.intellij.lang.javascript.psi.ecma6.TypeScriptObjectType;
+import com.intellij.lang.javascript.psi.ecma6.TypeScriptType;
+import com.intellij.lang.javascript.psi.ecma6.TypeScriptTypeAlias;
 import com.intellij.lang.javascript.psi.ecmal4.JSClass;
 import com.intellij.lang.javascript.psi.resolve.JSResolveUtil;
 import com.intellij.lang.javascript.psi.types.JSAnyType;
@@ -24,7 +27,6 @@ import com.intellij.psi.impl.ElementBase;
 import com.intellij.psi.util.PsiFormatUtilBase;
 import com.intellij.ui.SimpleColoredText;
 import com.intellij.ui.SimpleTextAttributes;
-import com.intellij.util.ObjectUtils;
 import com.intellij.util.containers.ContainerUtil;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
@@ -32,6 +34,7 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.util.Collection;
+import java.util.List;
 
 import static com.intellij.psi.util.PsiFormatUtilBase.*;
 
@@ -94,10 +97,22 @@ public class JavaScriptUmlElementManager extends AbstractDiagramElementManager<P
     @Override
     public Object @NotNull [] getNodeItems(PsiElement parent) {
         if (parent instanceof JSClass) {
-            Collection<JSElement> members = ContainerUtil.toCollection(((JSClass) parent).getMembers());
+            Collection<JSElement> members = getMembers((JSClass) parent);
             return ContainerUtil.filter(members, this::shouldDisplayNode).toArray();
         }
         return PsiElement.EMPTY_ARRAY;
+    }
+
+    @NotNull
+    private Collection<JSElement> getMembers(@NotNull JSClass parent) {
+        if (parent instanceof TypeScriptTypeAlias) {
+            TypeScriptType typeDeclaration = ((TypeScriptTypeAlias) parent).getTypeDeclaration();
+            return typeDeclaration instanceof TypeScriptObjectType
+                    ? List.of(((TypeScriptObjectType) typeDeclaration).getTypeMembers())
+                    : List.of();
+        }
+
+        return ContainerUtil.toCollection(parent.getMembers());
     }
 
     private boolean shouldDisplayNode(@NotNull JSElement element) {
@@ -105,12 +120,13 @@ public class JavaScriptUmlElementManager extends AbstractDiagramElementManager<P
     }
 
     @Override
-    public @Nullable SimpleColoredText getItemName(@Nullable PsiElement nodeElement, @Nullable Object nodeItem, @NotNull DiagramBuilder builder) {
-        PsiNamedElement element = ObjectUtils.tryCast(nodeItem, PsiNamedElement.class);
-        if (element == null) return null;
+    public @Nullable SimpleColoredText getItemName(@Nullable PsiElement nodeElement,
+                                                   @Nullable Object nodeItem,
+                                                   @NotNull DiagramBuilder builder) {
+        if (!(nodeItem instanceof PsiElement)) return null;
 
-        String name = element.getName();
-        if (StringUtil.isEmpty(name)) return null;
+        PsiElement element = (PsiElement) nodeItem;
+        String name = element instanceof PsiNamedElement ? StringUtil.notNullize(((PsiNamedElement) element).getName()) : "";
 
         StringBuilder text = new StringBuilder(name);
         if (element instanceof JSFunctionItem) {

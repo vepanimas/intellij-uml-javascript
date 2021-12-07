@@ -4,6 +4,7 @@ import com.intellij.lang.javascript.DialectDetector;
 import com.intellij.lang.javascript.ecmascript6.TypeScriptUtil;
 import com.intellij.lang.javascript.psi.*;
 import com.intellij.lang.javascript.psi.ecma6.TypeScriptEnum;
+import com.intellij.lang.javascript.psi.ecma6.TypeScriptIndexSignature;
 import com.intellij.lang.javascript.psi.ecma6.TypeScriptInterface;
 import com.intellij.lang.javascript.psi.ecma6.TypeScriptPropertySignature;
 import com.intellij.lang.javascript.psi.ecmal4.JSClass;
@@ -89,7 +90,8 @@ public final class JavaScriptUmlUtils {
 
     public static boolean isInterfaceOrObjectProperty(@Nullable Object element) {
         return element instanceof JSField && JSResolveUtil.findParent(((JSField) element)) instanceof TypeScriptInterface ||
-                element instanceof TypeScriptPropertySignature;
+                element instanceof TypeScriptPropertySignature ||
+                element instanceof TypeScriptIndexSignature;
     }
 
     public static boolean isEnumField(@Nullable Object element) {

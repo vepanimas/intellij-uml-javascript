@@ -4,6 +4,7 @@ import com.intellij.diagram.AbstractUmlVisibilityManager;
 import com.intellij.diagram.VisibilityLevel;
 import com.intellij.lang.javascript.psi.JSElementBase;
 import com.intellij.lang.javascript.psi.ecmal4.JSAttributeList;
+import com.intellij.lang.javascript.psi.ecmal4.JSAttributeListOwner;
 import com.intellij.psi.PsiModifier;
 import com.intellij.uml.utils.DiagramBundle;
 import com.intellij.util.ArrayUtil;
@@ -33,18 +34,32 @@ public class JavaScriptUmlVisibilityManager extends AbstractUmlVisibilityManager
     @Override
     public @Nullable VisibilityLevel getVisibilityLevel(@Nullable Object element) {
         if (element instanceof JSElementBase) {
-            JSAttributeList.AccessType accessType = ((JSElementBase) element).getAccessType();
-            switch (accessType) {
-                case PUBLIC:
-                case PACKAGE_LOCAL:
-                    return levels[0];
-                case PROTECTED:
-                    return levels[1];
-                case PRIVATE:
-                    return levels[2];
+            return mapAccessTypeToVisibility(((JSElementBase) element).getAccessType());
+        }
+
+        if (element instanceof JSAttributeListOwner) {
+            final JSAttributeListOwner attributeListOwner = (JSAttributeListOwner) element;
+            final JSAttributeList attributeList = attributeListOwner.getAttributeList();
+            if (attributeList != null) {
+                return mapAccessTypeToVisibility(attributeList.getAccessType());
             }
         }
-        return null;
+
+        return levels[0];
+    }
+
+    private @Nullable VisibilityLevel mapAccessTypeToVisibility(@NotNull JSAttributeList.AccessType accessType) {
+        switch (accessType) {
+            case PUBLIC:
+            case PACKAGE_LOCAL:
+                return levels[0];
+            case PROTECTED:
+                return levels[1];
+            case PRIVATE:
+                return levels[2];
+            default:
+                return null;
+        }
     }
 
     @Override

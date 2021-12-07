@@ -6,9 +6,7 @@ import com.intellij.diagram.presentation.DiagramState;
 import com.intellij.icons.AllIcons;
 import com.intellij.lang.javascript.presentable.JSFormatUtil;
 import com.intellij.lang.javascript.psi.*;
-import com.intellij.lang.javascript.psi.ecma6.TypeScriptObjectType;
-import com.intellij.lang.javascript.psi.ecma6.TypeScriptType;
-import com.intellij.lang.javascript.psi.ecma6.TypeScriptTypeAlias;
+import com.intellij.lang.javascript.psi.ecma6.*;
 import com.intellij.lang.javascript.psi.ecmal4.JSClass;
 import com.intellij.lang.javascript.psi.resolve.JSResolveUtil;
 import com.intellij.lang.javascript.psi.types.JSAnyType;
@@ -24,7 +22,6 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiNamedElement;
 import com.intellij.psi.impl.ElementBase;
-import com.intellij.psi.util.PsiFormatUtilBase;
 import com.intellij.ui.SimpleColoredText;
 import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.util.containers.ContainerUtil;
@@ -130,13 +127,33 @@ public class JavaScriptUmlElementManager extends AbstractDiagramElementManager<P
 
         StringBuilder text = new StringBuilder(name);
         if (element instanceof JSFunctionItem) {
-            int options = SHOW_PARAMETERS | SHOW_FQ_CLASS_NAMES | PsiFormatUtilBase.TYPE_AFTER;
-            int parametersOptions = PsiFormatUtilBase.SHOW_NAME | SHOW_TYPE | SHOW_RAW_TYPE | SHOW_FQ_CLASS_NAMES | PsiFormatUtilBase.TYPE_AFTER;
+            int options = SHOW_PARAMETERS | SHOW_FQ_CLASS_NAMES | TYPE_AFTER;
+            int parametersOptions = SHOW_NAME | SHOW_TYPE | SHOW_RAW_TYPE | SHOW_FQ_CLASS_NAMES | TYPE_AFTER;
             String signature = JSFormatUtil.formatMethod(((JSFunctionItem) element), options, parametersOptions, MAX_PARAMS_TO_SHOW, null);
+            text.append(signature);
+        } else if (element instanceof TypeScriptIndexSignature) {
+            String signature = formatIndexSignature(((TypeScriptIndexSignature) element));
             text.append(signature);
         }
 
         return new SimpleColoredText(text.toString(), SimpleTextAttributes.REGULAR_ATTRIBUTES);
+    }
+
+    /**
+     * A custom implementation is provided because {@link JSFormatUtil#formatTypeMember(TypeScriptTypeMember, int, int)}
+     * doesn't support formatting a signature without printing a return type, which should be shown in a separate column in the UML node.
+     */
+    private static @NotNull String formatIndexSignature(@NotNull TypeScriptIndexSignature signature) {
+        StringBuilder text = new StringBuilder();
+        text.append('[');
+        PsiElement parameterName = signature.getParameterNameElement();
+        if (parameterName != null) {
+            text.append(parameterName.getText());
+        }
+        JSType type = signature.getMemberParameterType();
+        JSFormatUtil.appendTypeAfter(signature, SHOW_TYPE | SHOW_NAME, text, type);
+        text.append(']');
+        return text.toString();
     }
 
     @Override
@@ -166,6 +183,11 @@ public class JavaScriptUmlElementManager extends AbstractDiagramElementManager<P
 
             JSType type = JSResolveUtil.getElementJSType((JSField) element);
             if (type != null) return type.getTypeText(JSType.TypeTextFormat.PRESENTABLE);
+        }
+
+        if (element instanceof TypeScriptIndexSignature) {
+            JSType type = ((TypeScriptIndexSignature) element).getMemberType();
+            return type.getTypeText(JSType.TypeTextFormat.PRESENTABLE);
         }
 
         JSAnyType anyType = JSAnyType.get(((PsiElement) element), true);

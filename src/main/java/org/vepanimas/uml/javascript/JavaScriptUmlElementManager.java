@@ -36,6 +36,9 @@ import java.util.Collection;
 import static com.intellij.psi.util.PsiFormatUtilBase.*;
 
 public class JavaScriptUmlElementManager extends AbstractDiagramElementManager<PsiElement> {
+
+    private static final int MAX_TYPE_PRESENTATION_LENGTH = 40;
+
     @Override
     public @Nullable PsiElement findInDataContext(@NotNull DataContext dataContext) {
         PsiElement element = dataContext.getData(CommonDataKeys.PSI_ELEMENT);
@@ -123,7 +126,12 @@ public class JavaScriptUmlElementManager extends AbstractDiagramElementManager<P
     @Override
     public @Nullable SimpleColoredText getItemType(@Nullable Object element) {
         String typeText = getItemTypeText(element);
-        return !StringUtil.isEmpty(typeText) ? new SimpleColoredText(typeText, SimpleTextAttributes.REGULAR_ATTRIBUTES) : null;
+        if (StringUtil.isEmpty(typeText)) {
+            return null;
+        }
+
+        typeText = StringUtil.shortenTextWithEllipsis(typeText, MAX_TYPE_PRESENTATION_LENGTH, 0, true);
+        return new SimpleColoredText(typeText, SimpleTextAttributes.REGULAR_ATTRIBUTES);
     }
 
 

@@ -16,6 +16,7 @@ import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.util.Iconable;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.PsiDirectory;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiNamedElement;
@@ -70,6 +71,11 @@ public class JavaScriptUmlElementManager extends AbstractDiagramElementManager<P
             if (virtualFile != null) {
                 return virtualFile.getPresentableName();
             }
+        }
+        if (element instanceof PsiDirectory) {
+            VirtualFile file = ((PsiDirectory) element).getVirtualFile();
+            return JavaScriptUmlBundle
+                    .message("javascript.uml.element.directory.presentable.name", file.getPresentableName());
         }
         return null;
     }

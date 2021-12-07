@@ -49,7 +49,7 @@ public final class JavaScriptUmlExtras extends DiagramExtras<PsiElement> {
 
     @Override
     public boolean isExpandCollapseActionsImplemented() {
-        return true;
+        return false;
     }
 
     public static @NotNull String getConfigGroupName() {

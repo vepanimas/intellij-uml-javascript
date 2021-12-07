@@ -238,15 +238,14 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
             return false;
         }
 
-        JavaScriptUmlRelationship relationship = ObjectUtils.tryCast(subEdge.getRelationship(), JavaScriptUmlRelationship.class);
-        if (relationship == null) {
-            return false;
+        DiagramRelationshipInfo relationship = subEdge.getRelationship();
+        if (relationship instanceof JavaScriptUmlRelationship) {
+            return ((JavaScriptUmlRelationship) relationship).getType().equals(JavaScriptUmlRelationship.CREATE);
         }
 
         return relationship == JavaScriptUmlRelationship.GENERALIZATION
                 || relationship == JavaScriptUmlRelationship.INTERFACE_GENERALIZATION
-                || relationship == JavaScriptUmlRelationship.REALIZATION
-                || relationship.getType().equals(JavaScriptUmlRelationship.CREATE);
+                || relationship == JavaScriptUmlRelationship.REALIZATION;
     }
 
     private static boolean showParentsFor(@NotNull JSClass jsClass) {

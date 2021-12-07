@@ -104,7 +104,9 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
     }
 
     private @Nullable DiagramNode<PsiElement> addElement(@Nullable PsiElement element, boolean isInitialization) {
-        if (hasElement(element)) return null;
+        if (hasElement(element)) {
+            return null;
+        }
 
         if (element instanceof JSClass) {
             return ContainerUtil.getFirstItem(addClass((JSClass) element, isInitialization));
@@ -144,7 +146,9 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
     }
 
     private @NotNull List<DiagramNode<PsiElement>> addClass(@NotNull JSClass element, boolean addParents) {
-        if (hasElement(element)) return Collections.emptyList();
+        if (hasElement(element)) {
+            return Collections.emptyList();
+        }
 
         Set<JSClass> addedClasses = new HashSet<>();
 
@@ -178,7 +182,9 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
             myModificationTracker.incModificationCount();
         }
 
-        if (element instanceof JSClass) removeClass((JSClass) element);
+        if (element instanceof JSClass) {
+            removeClass((JSClass) element);
+        }
     }
 
     private void removeClass(@NotNull JSClass jsClass) {
@@ -203,16 +209,18 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
                          @NotNull Collection<DiagramEdge<PsiElement>> storage) {
         JavaScriptUmlEdge newEdge = new JavaScriptUmlEdge(from, to, relationship);
 
-        if (Stream.concat(myEdges.stream(), myDependencyEdges.stream()).anyMatch(edge1 -> isEdgeIgnored(edge1, newEdge)))
+        if (Stream.concat(myEdges.stream(), myDependencyEdges.stream()).anyMatch(edge1 -> isEdgeIgnored(edge1, newEdge))) {
             return;
+        }
 
         for (DiagramEdge<PsiElement> suppressedEdge : ContainerUtil.filter(myDependencyEdges, edge -> isEdgeIgnored(newEdge, edge))) {
             myDependencyEdges.remove(suppressedEdge);
         }
 
         for (DiagramEdge<PsiElement> edge : storage) {
-            if (edge.getSource() == from && edge.getTarget() == to && relationship.equals(edge.getRelationship()))
+            if (edge.getSource() == from && edge.getTarget() == to && relationship.equals(edge.getRelationship())) {
                 return;
+            }
         }
 
         storage.add(newEdge);
@@ -220,15 +228,20 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
 
     private boolean isEdgeIgnored(@NotNull DiagramEdge<PsiElement> subEdge, @NotNull DiagramEdge<PsiElement> candidate) {
         JavaScriptUmlRelationship candidateRelationship = ObjectUtils.tryCast(candidate.getRelationship(), JavaScriptUmlRelationship.class);
-        if (candidateRelationship == null || !candidateRelationship.getType().equals(JavaScriptUmlRelationship.DEPENDENCY))
+        if (candidateRelationship == null || !candidateRelationship.getType().equals(JavaScriptUmlRelationship.DEPENDENCY)) {
             return false;
+        }
 
         boolean sameElements = Objects.equals(subEdge.getSource(), candidate.getSource())
                 && Objects.equals(subEdge.getTarget(), candidate.getTarget());
-        if (!sameElements) return false;
+        if (!sameElements) {
+            return false;
+        }
 
         JavaScriptUmlRelationship relationship = ObjectUtils.tryCast(subEdge.getRelationship(), JavaScriptUmlRelationship.class);
-        if (relationship == null) return false;
+        if (relationship == null) {
+            return false;
+        }
 
         return relationship == JavaScriptUmlRelationship.GENERALIZATION
                 || relationship == JavaScriptUmlRelationship.INTERFACE_GENERALIZATION
@@ -275,7 +288,9 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
 
         for (JSClass jsClass : classes) {
             DiagramNode<PsiElement> source = findNode(jsClass);
-            if (source == null) continue;
+            if (source == null) {
+                continue;
+            }
 
             addClassGeneralizationEdges(jsClass, source, classes);
             addInterfaceGeneralizationEdges(jsClass, source, interfaces);
@@ -294,7 +309,9 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
     private void addClassGeneralizationEdges(@NotNull JSClass jsClass,
                                              @NotNull DiagramNode<PsiElement> source,
                                              @NotNull Set<JSClass> visibleElements) {
-        if (jsClass.isInterface()) return;
+        if (jsClass.isInterface()) {
+            return;
+        }
 
         JSClass targetClass = findFirstReachableSuperClass(jsClass, visibleElements);
         DiagramNode<PsiElement> target = findNode(targetClass);
@@ -306,7 +323,9 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
     private void addInterfaceGeneralizationEdges(@NotNull JSClass jsClass,
                                                  @NotNull DiagramNode<PsiElement> source,
                                                  @NotNull Set<JSClass> visibleElements) {
-        if (!jsClass.isInterface()) return;
+        if (!jsClass.isInterface()) {
+            return;
+        }
 
         for (JSClass reachableInterface : findReachableInterfaces(jsClass, visibleElements)) {
             var target = findNode(reachableInterface);
@@ -319,7 +338,9 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
     private void addInterfaceRealizationEdges(@NotNull JSClass jsClass,
                                               @NotNull DiagramNode<PsiElement> source,
                                               @NotNull Set<JSClass> visibleElements) {
-        if (jsClass.isInterface()) return;
+        if (jsClass.isInterface()) {
+            return;
+        }
 
         Queue<JSClass> interfaces = new ArrayDeque<>();
         ContainerUtil.addAll(interfaces, jsClass.getImplementedInterfaces());
@@ -336,7 +357,9 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
         Set<JSClass> visited = new HashSet<>();
         while (!interfaces.isEmpty()) {
             var jsInterface = interfaces.poll();
-            if (!visited.add(jsInterface)) continue;
+            if (!visited.add(jsInterface)) {
+                continue;
+            }
 
             DiagramNode<PsiElement> target = findNode(jsInterface);
             if (target != null) {
@@ -368,11 +391,15 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
     }
 
     private void doShowDependenciesNow(@Nullable ProgressIndicator indicator, @NotNull Set<? extends JSClass> classes) {
-        if (indicator != null) indicator.setIndeterminate(false);
+        if (indicator != null) {
+            indicator.setIndeterminate(false);
+        }
         Map<DiagramNode<PsiElement>, Collection<JavaScriptUmlDependencyInfo>> computedDependencies = new HashMap<>();
         int classIdx = 1;
         for (JSClass jsClass : classes) {
-            if (indicator != null) indicator.checkCanceled();
+            if (indicator != null) {
+                indicator.checkCanceled();
+            }
 
             ReadAction.run(() -> {
                 if (indicator != null) {
@@ -385,12 +412,16 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
             });
 
             classIdx++;
-            if (indicator != null) indicator.setFraction((double) classIdx / classes.size());
+            if (indicator != null) {
+                indicator.setFraction((double) classIdx / classes.size());
+            }
         }
 
         ReadAction.run(() -> {
             for (var dependencyInfo : computedDependencies.entrySet()) {
-                if (indicator != null) indicator.checkCanceled();
+                if (indicator != null) {
+                    indicator.checkCanceled();
+                }
                 var source = dependencyInfo.getKey();
                 for (var dependency : dependencyInfo.getValue()) {
                     var target = findNode(dependency.getTarget());
@@ -422,7 +453,9 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
                                        @NotNull Processor<JSClass> processor,
                                        @NotNull Function<JSClass, JSClass[]> getParents,
                                        @NotNull Set<JSClass> stopAt) {
-        if (!showParentsFor(element)) return;
+        if (!showParentsFor(element)) {
+            return;
+        }
 
         Queue<JSClass> queue = new ArrayDeque<>();
         Set<JSClass> visited = new HashSet<>();
@@ -432,8 +465,12 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
 
         while (!queue.isEmpty()) {
             JSClass jsClass = queue.poll();
-            if (!visited.add(jsClass)) continue;
-            if (!processor.process(jsClass)) return;
+            if (!visited.add(jsClass)) {
+                continue;
+            }
+            if (!processor.process(jsClass)) {
+                return;
+            }
 
             // prevent the tree walk-up for this subtree branch
             if (stopAt.contains(jsClass)) {
@@ -481,7 +518,9 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
 
     private @Nullable DiagramNode<PsiElement> findNode(@Nullable PsiElement element) {
         String fqn = getFqn(element);
-        if (fqn == null) return null;
+        if (fqn == null) {
+            return null;
+        }
 
         return getNodes().stream()
                 .filter(node -> fqn.equals(getFqn(node.getIdentifyingElement())))
@@ -489,7 +528,9 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
     }
 
     private @Nullable String getFqn(@Nullable PsiElement element) {
-        if (element == null || !element.isValid()) return null;
+        if (element == null || !element.isValid()) {
+            return null;
+        }
         return getProvider().getVfsResolver().getQualifiedName(element);
     }
 

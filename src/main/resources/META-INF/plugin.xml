@@ -29,23 +29,9 @@
 
     <change-notes>
         <![CDATA[
-        <h3>Added:</h3>
-        <ul>
-            <li>Support for TypeScript index signatures.</li>
-            <li>Support for TypeScript type aliases.</li>
-        </ul>
-
-        <h3>Changed:</h3>
-        <ul>
-            <li>Enable all element categories by default.</li>
-            <li>Filter "usage" dependencies when a more specific relationship exists.</li>
-            <li>Shorten too long member types.</li>
-            <li>Shorten the diagram tab name for diagrams built for the whole directory.</li>
-        </ul>
-
         <h3>Fixed:</h3>
         <ul>
-            <li>Compatibility with 2021.3.</li>
+            <li>Compatibility with 2022.3.</li>
         </ul>
     ]]>
     </change-notes>

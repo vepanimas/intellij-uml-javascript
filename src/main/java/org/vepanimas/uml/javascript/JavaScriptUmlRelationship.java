@@ -34,30 +34,30 @@ public interface JavaScriptUmlRelationship extends DiagramRelationshipInfo {
     final class Factory {
 
         public static JavaScriptUmlRelationship oneToOne(String label, @NotNull PsiElement element) {
-            return new Impl(ONE_TO_ONE, DiagramLineType.SOLID, label, "1", "1", 1, DiagramRelationships.getAngleArrow(), DIAMOND, element,
-                    true);
+            return new Impl(ONE_TO_ONE, DiagramLineType.SOLID, label, null, "1", 1,
+                    DiagramRelationshipInfo.DIAMOND, DiagramRelationshipInfo.ANGLE, element, true);
         }
 
         public static JavaScriptUmlRelationship oneToMany(String label, @NotNull PsiElement element) {
-            return new Impl(ONE_TO_MANY, DiagramLineType.SOLID, label, "*", "1", 1, DiagramRelationships.getAngleArrow(), DIAMOND, element,
-                    true);
+            return new Impl(ONE_TO_MANY, DiagramLineType.SOLID, label, null, "*", 1,
+                    DiagramRelationshipInfo.DIAMOND, DiagramRelationshipInfo.ANGLE, element, true);
         }
 
         public static JavaScriptUmlRelationship dependency(@Nullable String label, @NotNull PsiElement element) {
             return new Impl(DEPENDENCY, DiagramLineType.DASHED, StringUtil.notNullize(label), null, null, 1,
-                    DiagramRelationships.getAngleArrow(), null, element, label != null);
+                    null, DiagramRelationshipInfo.ANGLE, element, label != null);
         }
 
         public static JavaScriptUmlRelationship create(@NotNull PsiElement element) {
-            return new Impl(CREATE, DiagramLineType.DASHED, DiagramRelationships.CREATE.getLabel(), null, null, 1,
-                    DiagramRelationships.getAngleArrow(), null, element, false);
+            return new Impl(CREATE, DiagramLineType.DASHED, "<html>&laquo;create&raquo;</html>", null, null, 1,
+                    null, DiagramRelationshipInfo.ANGLE, element, false);
         }
 
         private static class Impl extends DiagramRelationshipInfoAdapter implements JavaScriptUmlRelationship {
 
             private final String myType;
-            private final Shape myStartArrow;
-            private final Shape myEndArrow;
+            private final Shape mySourceArrow;
+            private final Shape myTargetArrow;
             private final boolean myAllowMultipleLinks;
 
             @Nullable
@@ -69,14 +69,14 @@ public interface JavaScriptUmlRelationship extends DiagramRelationshipInfo {
                  @Nullable final String fromLabel,
                  @Nullable final String toLabel,
                  final int width,
-                 final Shape startArrow,
-                 final Shape endArrow,
+                 final Shape sourceArrow,
+                 final Shape targetArrow,
                  @Nullable PsiElement element,
                  boolean allowMultipleLinks) {
                 super(type, lineType, label, fromLabel, toLabel, width);
                 myType = type;
-                myStartArrow = startArrow;
-                myEndArrow = endArrow;
+                mySourceArrow = sourceArrow;
+                myTargetArrow = targetArrow;
                 myAllowMultipleLinks = allowMultipleLinks;
                 myElementPointer =
                         element != null ? SmartPointerManager.getInstance(element.getProject()).createSmartPsiElementPointer(element) : null;
@@ -95,13 +95,13 @@ public interface JavaScriptUmlRelationship extends DiagramRelationshipInfo {
             }
 
             @Override
-            public Shape getStartArrow() {
-                return myStartArrow;
+            public @Nullable Shape getSourceArrow() {
+                return mySourceArrow;
             }
 
             @Override
-            public Shape getEndArrow() {
-                return myEndArrow;
+            public @Nullable Shape getTargetArrow() {
+                return myTargetArrow;
             }
 
             @Override

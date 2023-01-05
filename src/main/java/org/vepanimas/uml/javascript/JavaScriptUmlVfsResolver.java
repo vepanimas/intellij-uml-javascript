@@ -14,6 +14,7 @@ import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.psi.impl.file.PsiDirectoryFactory;
 import com.intellij.psi.util.PsiUtilCore;
+import com.intellij.util.containers.ContainerUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -61,7 +62,12 @@ public class JavaScriptUmlVfsResolver implements DiagramVfsResolver<PsiElement> 
         VirtualFile file = LocalFileSystem.getInstance().findFileByPath(path);
         if (file == null) return null;
         PsiFile psiFile = PsiManager.getInstance(project).findFile(file);
-        if (psiFile == null) return null;
-        return JSResolveUtil.findType(expectedQualifiedName, psiFile, true);
+        if (!(psiFile instanceof JSFile)) return null;
+        PsiElement resolved = JSResolveUtil.findType(expectedQualifiedName, psiFile, true);
+        if (resolved != null) {
+            return resolved;
+        }
+
+        return ContainerUtil.getFirstItem(JSResolveUtil.findNamedElementsInScope(expectedQualifiedName, ((JSFile) psiFile)));
     }
 }

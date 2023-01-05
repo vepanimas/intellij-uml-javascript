@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id 'org.jetbrains.intellij' version '1.7.0'
+    id 'org.jetbrains.intellij' version '1.11.0'
 }
 
 group pluginGroup
@@ -12,6 +12,11 @@ repositories {
     mavenCentral()
 }
 
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
 dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.2'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.2'
@@ -21,7 +26,7 @@ dependencies {
 intellij {
     version = platformVersion
     type = platformType
-    plugins = ['JavaScriptLanguage', 'IntelliLang', 'java', 'uml']
+    plugins = ['JavaScript', 'org.intellij.intelliLang', 'java', 'uml']
 
     patchPluginXml {
         version = pluginVersion
@@ -31,7 +36,7 @@ intellij {
 }
 
 runPluginVerifier {
-    ideVersions = ['IU-2021.1', 'IU-2021.2', 'IU-2021.3']
+    ideVersions = ['IU-2022.2', 'IU-2022.3']
 }
 
 test {

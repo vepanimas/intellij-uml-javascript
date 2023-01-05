@@ -19,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
 
 public class JavaScriptUmlVfsResolver implements DiagramVfsResolver<PsiElement> {
 
-    private static final String SEPARATOR = ":";
+    private static final String SEPARATOR = "#";
 
     @Override
     public @Nullable String getQualifiedName(PsiElement element) {

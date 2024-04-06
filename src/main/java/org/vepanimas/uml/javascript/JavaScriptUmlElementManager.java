@@ -14,6 +14,7 @@ import com.intellij.lang.javascript.psi.types.JSContext;
 import com.intellij.lang.javascript.refactoring.JSVisibilityUtil;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.actionSystem.DataContext;
+import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.util.Iconable;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -94,7 +95,7 @@ public class JavaScriptUmlElementManager extends AbstractDiagramElementManager<P
     @Override
     public Object @NotNull [] getNodeItems(PsiElement parent) {
         if (parent instanceof JSClass) {
-            Collection<JSElement> members = getMembers((JSClass) parent);
+            Collection<JSElement> members = ReadAction.compute(() -> getMembers((JSClass) parent));
             return ContainerUtil.filter(members, this::shouldDisplayNode).toArray();
         }
         return PsiElement.EMPTY_ARRAY;
@@ -113,30 +114,31 @@ public class JavaScriptUmlElementManager extends AbstractDiagramElementManager<P
     }
 
     private boolean shouldDisplayNode(@NotNull JSElement element) {
-        return !JavaScriptUmlUtils.isIgnoredProperty(element);
+        return ReadAction.compute(() -> !JavaScriptUmlUtils.isIgnoredProperty(element));
     }
 
     @Override
     public @Nullable SimpleColoredText getItemName(@Nullable PsiElement nodeElement,
                                                    @Nullable Object nodeItem,
                                                    @NotNull DiagramBuilder builder) {
-        if (!(nodeItem instanceof PsiElement)) return null;
+        return ReadAction.compute(() -> {
+            if (!(nodeItem instanceof PsiElement element)) return null;
 
-        PsiElement element = (PsiElement) nodeItem;
-        String name = element instanceof PsiNamedElement ? StringUtil.notNullize(((PsiNamedElement) element).getName()) : "";
+            String name = element instanceof PsiNamedElement ? StringUtil.notNullize(((PsiNamedElement) element).getName()) : "";
 
-        StringBuilder text = new StringBuilder(name);
-        if (element instanceof JSFunctionItem) {
-            int options = SHOW_PARAMETERS | SHOW_FQ_CLASS_NAMES | TYPE_AFTER;
-            int parametersOptions = SHOW_NAME | SHOW_TYPE | SHOW_RAW_TYPE | SHOW_FQ_CLASS_NAMES | TYPE_AFTER;
-            String signature = JSFormatUtil.formatMethod(((JSFunctionItem) element), options, parametersOptions, MAX_PARAMS_TO_SHOW, null);
-            text.append(signature);
-        } else if (element instanceof TypeScriptIndexSignature) {
-            String signature = formatIndexSignature(((TypeScriptIndexSignature) element));
-            text.append(signature);
-        }
+            StringBuilder text = new StringBuilder(name);
+            if (element instanceof JSFunctionItem) {
+                int options = SHOW_PARAMETERS | SHOW_FQ_CLASS_NAMES | TYPE_AFTER;
+                int parametersOptions = SHOW_NAME | SHOW_TYPE | SHOW_RAW_TYPE | SHOW_FQ_CLASS_NAMES | TYPE_AFTER;
+                String signature = JSFormatUtil.formatMethod(((JSFunctionItem) element), options, parametersOptions, MAX_PARAMS_TO_SHOW, null);
+                text.append(signature);
+            } else if (element instanceof TypeScriptIndexSignature) {
+                String signature = formatIndexSignature(((TypeScriptIndexSignature) element));
+                text.append(signature);
+            }
 
-        return new SimpleColoredText(text.toString(), SimpleTextAttributes.REGULAR_ATTRIBUTES);
+            return new SimpleColoredText(text.toString(), SimpleTextAttributes.REGULAR_ATTRIBUTES);
+        });
     }
 
     /**
@@ -158,7 +160,7 @@ public class JavaScriptUmlElementManager extends AbstractDiagramElementManager<P
 
     @Override
     public @Nullable SimpleColoredText getItemType(@Nullable Object element) {
-        String typeText = getItemTypeText(element);
+        String typeText = ReadAction.compute(() -> getItemTypeText(element));
         if (StringUtil.isEmpty(typeText)) {
             return null;
         }
@@ -190,28 +192,30 @@ public class JavaScriptUmlElementManager extends AbstractDiagramElementManager<P
             return type.getTypeText(JSType.TypeTextFormat.PRESENTABLE);
         }
 
-        JSAnyType anyType = JSAnyType.get(((PsiElement) element), true);
+        JSAnyType anyType = JSAnyType.get(((PsiElement) element));
         return anyType.getTypeText(JSType.TypeTextFormat.PRESENTABLE);
     }
 
     @Override
     public @Nullable Icon getItemIcon(@Nullable Object element, @NotNull DiagramState presentation) {
-        int flags = Iconable.ICON_FLAG_READ_STATUS | Iconable.ICON_FLAG_VISIBILITY;
+        return ReadAction.compute(() -> {
+            int flags = Iconable.ICON_FLAG_READ_STATUS | Iconable.ICON_FLAG_VISIBILITY;
 
-        if (JavaScriptUmlUtils.isReadWriteProperty(element)) {
-            JSFunctionItem function = (JSFunctionItem) element;
-            Icon initialIcon = function.getJSContext() == JSContext.STATIC ?
-                    AllIcons.Nodes.PropertyReadWriteStatic :
-                    AllIcons.Nodes.PropertyReadWrite;
-            JSVisibilityUtil.PresentableAccessModifier modifier = JSVisibilityUtil.getPresentableAccessModifier(function);
-            if (modifier == null) return initialIcon;
-            return ElementBase.iconWithVisibilityIfNeeded(flags, initialIcon, modifier.getIcon());
-        }
+            if (JavaScriptUmlUtils.isReadWriteProperty(element)) {
+                JSFunctionItem function = (JSFunctionItem) element;
+                Icon initialIcon = function.getJSContext() == JSContext.STATIC ?
+                        AllIcons.Nodes.PropertyReadWriteStatic :
+                        AllIcons.Nodes.PropertyReadWrite;
+                JSVisibilityUtil.PresentableAccessModifier modifier = JSVisibilityUtil.getPresentableAccessModifier(function);
+                if (modifier == null) return initialIcon;
+                return ElementBase.iconWithVisibilityIfNeeded(flags, initialIcon, modifier.getIcon());
+            }
 
-        if (element instanceof Iconable) {
-            return ((Iconable) element).getIcon(flags);
-        }
+            if (element instanceof Iconable) {
+                return ((Iconable) element).getIcon(flags);
+            }
 
-        return super.getItemIcon(element, presentation);
+            return super.getItemIcon(element, presentation);
+        });
     }
 }

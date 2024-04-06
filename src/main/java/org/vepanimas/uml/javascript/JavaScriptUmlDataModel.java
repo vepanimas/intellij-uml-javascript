@@ -21,13 +21,17 @@ import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.util.CommonProcessors;
 import com.intellij.util.ObjectUtils;
 import com.intellij.util.Processor;
+import com.intellij.util.concurrency.AppExecutorUtil;
 import com.intellij.util.containers.ContainerUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.concurrency.Promises;
 import org.vepanimas.uml.javascript.dependencies.JavaScriptUmlDependenciesAnalyzer;
 import org.vepanimas.uml.javascript.dependencies.JavaScriptUmlDependencyInfo;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -45,6 +49,8 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
     private final @NotNull Set<DiagramEdge<PsiElement>> myDependencyEdges = new HashSet<>();
 
     private final Object myLock = new Object();
+
+    private final AtomicBoolean myUpdateInProgress = new AtomicBoolean();
 
     public JavaScriptUmlDataModel(@NotNull Project project, @Nullable PsiElement psiElement) {
         super(project, Objects.requireNonNull(DiagramProvider.findByID(JavaScriptUmlProvider.ID)));
@@ -261,9 +267,28 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
 
     @Override
     public void refreshDataModel() {
+        refreshDataModel(null);
+    }
+
+    @Override
+    public @NotNull CompletableFuture<Void> refreshDataModelAsync(@NotNull ProgressIndicator indicator) {
+        if (!myUpdateInProgress.compareAndSet(false, true))
+            return CompletableFuture.completedFuture(null);
+
+        return Promises.asCompletableFuture(
+                ReadAction.nonBlocking(() -> refreshDataModel(indicator))
+                        .expireWith(this)
+                        .inSmartMode(getProject())
+                        .withDocumentsCommitted(getProject())
+                        .wrapProgress(indicator)
+                        .submit(AppExecutorUtil.getAppExecutorService())
+        ).whenComplete((r, e) -> myUpdateInProgress.set(false));
+    }
+
+    private void refreshDataModel(@Nullable ProgressIndicator indicator) {
         synchronized (myLock) {
             clearNodesAndEdges();
-            updateModel();
+            updateModel(indicator);
         }
     }
 
@@ -273,11 +298,13 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
         myDependencyEdges.clear();
     }
 
-    private void updateModel() {
+    private void updateModel(@Nullable ProgressIndicator indicator) {
         Set<JSClass> classes = getAllClasses();
         Set<JSClass> interfaces = new HashSet<>();
 
         for (JSClass jsClass : classes) {
+            if (indicator != null) indicator.checkCanceled();
+
             myNodes.add(createNode(jsClass));
 
             if (jsClass.isInterface()) {
@@ -286,6 +313,8 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
         }
 
         for (JSClass jsClass : classes) {
+            if (indicator != null) indicator.checkCanceled();
+
             DiagramNode<PsiElement> source = findNode(jsClass);
             if (source == null) {
                 continue;
@@ -297,8 +326,10 @@ public class JavaScriptUmlDataModel extends DiagramDataModel<PsiElement> {
         }
 
         if (isShowDependencies()) {
+            if (indicator != null) indicator.checkCanceled();
+
             if (UndoManager.getInstance(getProject()).isUndoOrRedoInProgress()) {
-                doShowDependenciesNow(null, classes);
+                doShowDependenciesNow(indicator, classes);
             } else {
                 showDependenciesLater(classes);
             }

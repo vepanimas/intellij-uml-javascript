@@ -1,12 +1,10 @@
 plugins {
     id 'java'
-    id 'org.jetbrains.intellij' version '1.11.0'
+    id 'org.jetbrains.intellij' version '1.17.3'
 }
 
 group pluginGroup
 version pluginVersion
-
-apply plugin: 'java'
 
 repositories {
     mavenCentral()
@@ -36,7 +34,7 @@ intellij {
 }
 
 runPluginVerifier {
-    ideVersions = ['IU-2022.2', 'IU-2022.3']
+    ideVersions = ['IU-2024.1']
 }
 
 test {

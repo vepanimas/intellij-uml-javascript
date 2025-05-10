@@ -3,10 +3,14 @@
     <name>UML JavaScript and TypeScript</name>
     <vendor>Vladimir Panimaskin</vendor>
 
-    <depends>com.intellij.modules.platform</depends>
-    <depends>com.intellij.modules.ultimate</depends>
-    <depends>JavaScript</depends>
-    <depends>com.intellij.diagram</depends>
+    <resource-bundle>messages.DiagramJavaScriptBundle</resource-bundle>
+
+    <dependencies>
+        <plugin id="com.intellij.modules.platform"/>
+        <plugin id="com.intellij.modules.ultimate"/>
+        <plugin id="JavaScript"/>
+        <plugin id="com.intellij.diagram"/>
+    </dependencies>
 
     <description><![CDATA[
     Provides support for UML class diagrams in IntelliJ-based IDEs for <b>JavaScript</b> and <b>TypeScript</b> languages.
@@ -31,12 +35,10 @@
         <![CDATA[
         <h3>Fixed:</h3>
         <ul>
-            <li>Compatibility with 2024.1.</li>
+            <li>Compatibility with 2025.1.</li>
         </ul>
     ]]>
     </change-notes>
-
-    <resource-bundle>messages.DiagramJavaScriptBundle</resource-bundle>
 
     <extensions defaultExtensionNs="com.intellij">
         <diagram.Provider implementation="org.vepanimas.uml.javascript.JavaScriptUmlProvider"/>

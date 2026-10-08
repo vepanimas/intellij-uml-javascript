@@ -47,7 +47,7 @@ public class JavaScriptUmlDependenciesAnalyzer {
         @Override
         public void visitJSVariable(@NotNull JSVariable node) {
             if (node instanceof JSField) {
-                JSType type = TypeScriptTypeRelations.expandAndOptimizeTypeRecursive(node.getJSType());
+                JSType type = TypeScriptTypeRelations.expandAndOptimizeTypeRecursive(node.getJSType(), node);
                 boolean isOneToMany = JSTypeUtils.isArrayLikeType(type);
                 if (isOneToMany) {
                     type = JSTypeUtils.getIndexableComponentType(type);

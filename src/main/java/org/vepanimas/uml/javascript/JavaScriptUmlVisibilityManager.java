@@ -5,7 +5,6 @@ import com.intellij.diagram.VisibilityLevel;
 import com.intellij.lang.javascript.psi.JSElementBase;
 import com.intellij.lang.javascript.psi.ecmal4.JSAttributeList;
 import com.intellij.lang.javascript.psi.ecmal4.JSAttributeListOwner;
-import com.intellij.psi.PsiModifier;
 import com.intellij.uml.utils.DiagramBundle;
 import com.intellij.util.ArrayUtil;
 import org.jetbrains.annotations.NotNull;
@@ -15,9 +14,9 @@ import java.util.Comparator;
 
 public class JavaScriptUmlVisibilityManager extends AbstractUmlVisibilityManager {
     private static final VisibilityLevel @NotNull [] levels = {
-            new VisibilityLevel(PsiModifier.PUBLIC),
-            new VisibilityLevel(PsiModifier.PROTECTED),
-            new VisibilityLevel(PsiModifier.PRIVATE, DiagramBundle.message("visibility.level.all"))
+            new VisibilityLevel("public"),
+            new VisibilityLevel("protected"),
+            new VisibilityLevel("private", DiagramBundle.message("visibility.level.all"))
     };
 
     private static final @NotNull Comparator<VisibilityLevel> COMPARATOR = (o1, o2) -> {

@@ -5,10 +5,11 @@ val propertyPluginVersion = providers.gradleProperty("pluginVersion").get()
 val propertyPlatformVersion = providers.gradleProperty("platformVersion").get()
 val propertyPluginSinceBuild = providers.gradleProperty("pluginSinceBuild").get()
 val propertyBundledPlugins = providers.gradleProperty("platformBundledPlugins").map { it.split(",") }.get()
+val propertyBundledModules = providers.gradleProperty("platformBundledModules").map { it.split(",") }.get()
 
 plugins {
     id("java")
-    id("org.jetbrains.intellij.platform") version "2.5.0"
+    id("org.jetbrains.intellij.platform") version "2.18.1"
 }
 
 group = propertyPluginGroup
@@ -24,8 +25,9 @@ repositories {
 
 dependencies {
     intellijPlatform {
-        intellijIdeaUltimate(propertyPlatformVersion)
+        intellijIdea(propertyPlatformVersion)
         bundledPlugins(propertyBundledPlugins)
+        bundledModules(propertyBundledModules)
         testFramework(TestFrameworkType.Platform)
     }
 
